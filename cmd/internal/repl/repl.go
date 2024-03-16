@@ -32,11 +32,7 @@ func Start() {
 		lexer := lexer.New(input)
 		parser := parser.New(lexer)
 		parser.Parse()
-		result := interpreter.Eval(parser.Ast)
-		if result != nil {
-			fmt.Println(result)
-		}
-		//		fmt.Printf("%+v\n", lexer.NextToken())
+		interpreter.Eval(parser.Ast)
 	}
 }
 

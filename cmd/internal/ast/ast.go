@@ -20,6 +20,11 @@ type FloatLiteral struct {
 	Value float64
 }
 
+type StringLiteral struct {
+	Value string
+	Node
+}
+
 type Program struct {
 	Body []Statement
 	Node

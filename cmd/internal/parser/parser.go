@@ -54,6 +54,15 @@ func (p *Parser) Program() {
 				},
 				Value: p.currentToken.Value().(float64),
 			})
+		case token.STRING:
+			p.Ast.Body = append(p.Ast.Body, ast.StringLiteral{
+				Node: ast.Node{
+					Start: p.currentToken.Start(),
+					End:   p.currentToken.End(),
+					Type:  "StringLiteral",
+				},
+				Value: p.currentToken.Value().(string),
+			})
 		}
 		p.readToken()
 	}

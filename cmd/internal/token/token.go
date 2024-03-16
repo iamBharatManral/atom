@@ -1,10 +1,10 @@
 package token
 
 const (
-	ILLEGAL   = "ILLEGAL"
-	EOF       = "EOF"
-	SEMICOLON = "SEMICOLON"
+	ILLEGAL = "ILLEGAL"
+	EOF     = "EOF"
 
+	STRING  = "STRING"
 	INTEGER = "INTEGER"
 	FLOAT   = "FLOAT"
 )
