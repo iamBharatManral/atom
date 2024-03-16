@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/iamBharatManral/atom.git/cmd/internal/interpreter"
+	filerunner "github.com/iamBharatManral/atom.git/cmd/internal/fileRunner"
 	"github.com/iamBharatManral/atom.git/cmd/internal/repl"
 	"github.com/iamBharatManral/atom.git/cmd/internal/util"
 )
@@ -18,7 +18,7 @@ func main() {
 			os.Exit(0)
 		} else {
 			filename := args[1]
-			interpreter.Execute(filename)
+			filerunner.Execute(filename)
 		}
 	}
 }

@@ -1,7 +1,18 @@
 package interpreter
 
-import "fmt"
+import "github.com/iamBharatManral/atom.git/cmd/internal/ast"
 
-func Execute(filename string) {
-	fmt.Printf("executing %s", filename)
+func Eval(program ast.Program) any {
+	if len(program.Body) == 0 {
+		return nil
+	}
+	node := program.Body[0]
+	switch node.(type) {
+	case ast.IntegerLiteral:
+		return node.(ast.IntegerLiteral).Value
+	case ast.FloatLiteral:
+		return node.(ast.FloatLiteral).Value
+	default:
+		return nil
+	}
 }
