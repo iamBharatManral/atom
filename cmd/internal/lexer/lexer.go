@@ -31,7 +31,7 @@ func (l *Lexer) NextToken() token.Token {
 	l.readChar()
 	l.ignoreWhiteSpace()
 	if l.isAtEnd() {
-		return illegalToken()
+		return l.endOfFileToken()
 	}
 	switch l.currentChar {
 	case '"':
@@ -69,7 +69,7 @@ func illegalToken() token.Token {
 }
 
 func (l *Lexer) endOfFileToken() token.Token {
-	return token.New(token.EOF, "", "", l.currentPos-1, l.currentPos-1)
+	return token.New(token.EOF, "", "", l.currentPos, l.currentPos)
 }
 
 func (l *Lexer) stringToken() (token.Token, error) {
