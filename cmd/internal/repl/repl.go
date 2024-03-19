@@ -31,8 +31,15 @@ func Start() {
 		}
 		lexer := lexer.New(input)
 		parser := parser.New(lexer)
-		parser.Parse()
-		interpreter.Eval(parser.Ast)
+		program := parser.Parse()
+		if len(program.Body) > 0 {
+			result := interpreter.Eval(program.Body[0])
+			if result.Type == "error" {
+				fmt.Println(result.Value)
+				continue
+			}
+			fmt.Println(result.Value)
+		}
 	}
 }
 

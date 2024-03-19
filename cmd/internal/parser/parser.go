@@ -9,65 +9,95 @@ import (
 type Parser struct {
 	lexer        *lexer.Lexer
 	currentToken token.Token
-	Ast          ast.Program
+	peekToken    token.Token
 }
 
 func New(lexer *lexer.Lexer) *Parser {
 	return &Parser{
-		lexer: lexer,
+		lexer:        lexer,
+		currentToken: lexer.NextToken(),
+		peekToken:    lexer.NextToken(),
 	}
 }
 
-func (p *Parser) Parse() {
-	p.readToken()
-	p.Program()
-}
-
-func (p *Parser) Program() {
-	p.Ast = ast.Program{
+func (p *Parser) Parse() ast.Program {
+	program := ast.Program{
 		Node: ast.Node{
 			Type:  "Program",
 			Start: 0,
-			End:   p.lexer.Len() - 1,
+			End:   int(p.lexer.Len()) - 1,
 		},
 		Body: []ast.Statement{},
 	}
 	for p.currentToken.TokenType() != token.EOF {
-		switch p.currentToken.TokenType() {
-		case token.INTEGER:
-			{
-				p.Ast.Body = append(p.Ast.Body, ast.IntegerLiteral{
-					Node: ast.Node{
-						Start: p.currentToken.Start(),
-						End:   p.currentToken.End(),
-						Type:  "IntegerLiteral",
-					},
-					Value: p.currentToken.Value().(int),
-				})
-			}
-		case token.FLOAT:
-			p.Ast.Body = append(p.Ast.Body, ast.FloatLiteral{
-				Node: ast.Node{
-					Start: p.currentToken.Start(),
-					End:   p.currentToken.End(),
-					Type:  "FloatLiteral",
-				},
-				Value: p.currentToken.Value().(float64),
-			})
-		case token.STRING:
-			p.Ast.Body = append(p.Ast.Body, ast.StringLiteral{
-				Node: ast.Node{
-					Start: p.currentToken.Start(),
-					End:   p.currentToken.End(),
-					Type:  "StringLiteral",
-				},
-				Value: p.currentToken.Value().(string),
-			})
+		stmt := p.parseStatement()
+		if stmt != nil {
+			program.Body = append(program.Body, stmt)
 		}
-		p.readToken()
+		p.nextToken()
+	}
+	return program
+}
+
+func (p *Parser) parseStatement() ast.Statement {
+	switch p.currentToken.TokenType() {
+	case token.INTEGER, token.FLOAT, token.STRING:
+		return p.parseLiteral()
+	}
+	return nil
+}
+
+func (p *Parser) parseLiteral() ast.Statement {
+	switch p.peekToken.TokenType() {
+	case token.PLUS, token.MINUS, token.STAR, token.SLASH:
+		return p.parseBinaryExpression()
+	default:
+		return ast.Literal{
+			Node: ast.Node{
+				Start: p.currentToken.Start(),
+				End:   p.currentToken.End(),
+				Type:  "Literal",
+			},
+			Value: p.currentToken.Value(),
+		}
 	}
 }
 
-func (p *Parser) readToken() {
-	p.currentToken = p.lexer.NextToken()
+func (p *Parser) parseBinaryExpression() ast.Statement {
+	start := p.currentToken.Start()
+	left := ast.Literal{
+		Node: ast.Node{
+			Start: p.currentToken.Start(),
+			End:   p.currentToken.End(),
+			Type:  "Literal",
+		},
+		Value: p.currentToken.Value(),
+	}
+	operator := p.peekToken.Lexeme()
+	p.nextToken()
+	end := p.peekToken.End()
+	right := ast.Literal{
+		Node: ast.Node{
+			Start: p.peekToken.Start(),
+			End:   end,
+			Type:  "Literal",
+		},
+		Value: p.peekToken.Value(),
+	}
+	p.nextToken()
+	return ast.BinaryExpression{
+		Node: ast.Node{
+			Start: start,
+			End:   end,
+			Type:  "BinaryExpression",
+		},
+		Left:     left,
+		Right:    right,
+		Operator: operator,
+	}
+}
+
+func (p *Parser) nextToken() {
+	p.currentToken = p.peekToken
+	p.peekToken = p.lexer.NextToken()
 }

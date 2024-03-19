@@ -1,6 +1,7 @@
 package filerunner
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -23,6 +24,11 @@ func Execute(filename string) {
 	}
 	lexer := lexer.New([]rune(string(input)))
 	parser := parser.New(lexer)
-	parser.Parse()
-	interpreter.Eval(parser.Ast)
+	program := parser.Parse()
+	result := interpreter.Eval(program)
+	if result.Type == "error" {
+		log.Fatal(result.Value)
+		return
+	}
+	fmt.Println(result.Value)
 }

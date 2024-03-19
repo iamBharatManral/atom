@@ -30,13 +30,25 @@ func TestLiterals(t *testing.T) {
 			token.New(token.INTEGER, "", 123, 8, 10),
 			token.New(token.FLOAT, "", 123.4, 12, 16),
 			token.New(token.INTEGER, "", 45678, 18, 22),
-			token.New(token.EOF, "", "", 33, 23),
+			token.New(token.EOF, "", "", 23, 23),
 		}, input: "\"hello\" 123 123.4 45678"},
+		{name: "binary expression 2 + 3", want: []token.Token{
+			token.New(token.INTEGER, "", 2, 0, 0),
+			token.New(token.PLUS, "+", "", 2, 2),
+			token.New(token.INTEGER, "", 3, 4, 4),
+			token.New(token.EOF, "", "", 5, 5),
+		}, input: "2 + 3"},
+		{name: "binary expressions without space 2+3", want: []token.Token{
+			token.New(token.INTEGER, "", 2, 0, 0),
+			token.New(token.PLUS, "+", "", 1, 1),
+			token.New(token.INTEGER, "", 3, 2, 2),
+			token.New(token.EOF, "", "", 3, 3),
+		}, input: "2+3"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var ans []token.Token
-			lexer := Lexer{input: []rune(tt.input)}
+			lexer := New([]rune(tt.input))
 			tok := lexer.NextToken()
 			for tok.TokenType() != token.EOF {
 				ans = append(ans, tok)

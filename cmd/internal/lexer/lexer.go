@@ -10,7 +10,7 @@ import (
 
 type Lexer struct {
 	input       []rune
-	currentPos  uint
+	currentPos  int
 	currentChar rune
 	line        uint
 }
@@ -18,7 +18,7 @@ type Lexer struct {
 func New(input []rune) *Lexer {
 	return &Lexer{
 		input:       input,
-		currentPos:  0,
+		currentPos:  -1,
 		currentChar: 0,
 		line:        1,
 	}
@@ -34,6 +34,14 @@ func (l *Lexer) NextToken() token.Token {
 		return l.endOfFileToken()
 	}
 	switch l.currentChar {
+	case '+':
+		return token.New(token.PLUS, "+", "", l.currentPos, l.currentPos)
+	case '-':
+		return token.New(token.MINUS, "-", "", l.currentPos, l.currentPos)
+	case '*':
+		return token.New(token.STAR, "*", "", l.currentPos, l.currentPos)
+	case '/':
+		return token.New(token.SLASH, "/", "", l.currentPos, l.currentPos)
 	case '"':
 		{
 			tok, err := l.stringToken()
@@ -75,16 +83,17 @@ func (l *Lexer) endOfFileToken() token.Token {
 func (l *Lexer) stringToken() (token.Token, error) {
 	start := l.currentPos
 	l.readChar()
-	for l.currentChar != '"' {
+	if l.isAtEnd() {
+		return token.Token{}, fmt.Errorf("error: unclosed string at line: %d, column: %d", l.line, l.currentPos-1)
+	}
+	for l.peek() != '"' && l.peek() != 0 {
 		l.readChar()
 	}
-	if l.isAtEnd() {
-		return token.Token{}, fmt.Errorf("error: not a valid string")
-	}
-	if l.currentChar == '"' {
+	if l.peek() == '"' {
+		l.readChar()
 		return token.New(token.STRING, string(l.input[start:l.currentPos+1]), string(l.input[start+1:l.currentPos]), start, l.currentPos), nil
 	}
-	return token.Token{}, fmt.Errorf("error: not a valid string")
+	return token.Token{}, fmt.Errorf("error: unclosed string at line: %d, column: %d", l.line, l.currentPos)
 }
 
 func (l *Lexer) isAtEnd() bool {
@@ -92,16 +101,22 @@ func (l *Lexer) isAtEnd() bool {
 }
 
 func (l *Lexer) readChar() {
-	if l.currentChar == 0 {
-		l.currentChar = l.input[l.currentPos]
-	} else {
-		l.currentPos += 1
-		if l.isAtEnd() {
-			l.currentChar = 0
-			return
-		}
-		l.currentChar = l.input[l.currentPos]
+	l.currentPos += 1
+	if l.isAtEnd() {
+		l.currentChar = 0
+		return
 	}
+	l.currentChar = l.input[l.currentPos]
+}
+
+func (l *Lexer) peek() rune {
+	l.currentPos += 1
+	if l.isAtEnd() {
+		l.currentPos -= 1
+		return 0
+	}
+	l.currentPos -= 1
+	return l.input[l.currentPos+1]
 }
 
 func (l *Lexer) numberToken() (token.Token, error) {
@@ -110,17 +125,18 @@ func (l *Lexer) numberToken() (token.Token, error) {
 	if err != nil {
 		return token.Token{}, err
 	}
-	if l.currentChar == '.' {
+	if l.peek() == '.' {
+		l.readChar()
 		afterDecPoint, err := l.readNumber()
 		if err != nil {
 			return token.Token{}, err
 		}
 		decimal := append(beforeDecPoint, afterDecPoint...)
 		number, _ := strconv.ParseFloat(string(decimal), 64)
-		return token.New(token.FLOAT, "", number, start, l.currentPos-1), nil
+		return token.New(token.FLOAT, "", number, start, l.currentPos), nil
 	}
 	number, _ := strconv.Atoi(string(beforeDecPoint))
-	return token.New(token.INTEGER, "", number, start, l.currentPos-1), nil
+	return token.New(token.INTEGER, "", number, start, l.currentPos), nil
 }
 
 func (l *Lexer) isWhiteSpace() bool {
@@ -133,20 +149,14 @@ func (l *Lexer) isWhiteSpace() bool {
 
 func (l *Lexer) readNumber() ([]rune, error) {
 	start := l.currentPos
-	l.readChar()
-	if l.isAtEnd() {
-		return l.input[start:l.currentPos], nil
-	}
-	for unicode.IsDigit(l.currentChar) {
+	for unicode.IsDigit(l.peek()) {
 		l.readChar()
 	}
-	if l.isAtEnd() {
-		return l.input[start:l.currentPos], nil
+	nextChar := l.peek()
+	if nextChar == '.' || unicode.IsSpace(nextChar) || !unicode.IsLetter(nextChar) {
+		return l.input[start : l.currentPos+1], nil
 	}
-	if l.currentChar == '.' || l.isWhiteSpace() {
-		return l.input[start:l.currentPos], nil
-	}
-	return nil, fmt.Errorf("error: illegal number at line: %d, columns: %d", l.line, l.currentPos-1)
+	return nil, fmt.Errorf("error: illegal number at line: %d, columns: %d", l.line, l.currentPos+1)
 }
 
 func (l *Lexer) Len() uint {

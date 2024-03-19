@@ -1,6 +1,8 @@
 package util
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func Banner() {
 	fmt.Println("\n\t  __   ____   __   _  _ ")

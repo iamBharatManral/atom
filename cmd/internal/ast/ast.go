@@ -2,26 +2,26 @@ package ast
 
 type Node struct {
 	Type  string
-	Start uint
-	End   uint
+	Start int
+	End   int
 }
 
-type Statement interface{}
+type (
+	Statement interface{}
+	AstNode   interface{}
+)
 
-type Literal interface{}
-
-type IntegerLiteral struct {
+type Literal struct {
+	Value any
 	Node
-	Value int
 }
 
-type FloatLiteral struct {
-	Node
-	Value float64
-}
+type Expression interface{}
 
-type StringLiteral struct {
-	Value string
+type BinaryExpression struct {
+	Left     Expression
+	Right    Expression
+	Operator string
 	Node
 }
 
