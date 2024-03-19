@@ -12,6 +12,8 @@ const (
 	STRING  = "STRING"
 	INTEGER = "INTEGER"
 	FLOAT   = "FLOAT"
+
+	IDENTIFIER = "IDENTIFIER"
 )
 
 type Token struct {

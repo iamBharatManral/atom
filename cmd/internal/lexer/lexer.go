@@ -60,10 +60,32 @@ func (l *Lexer) NextToken() token.Token {
 					return l.endOfFileToken()
 				}
 				return tok
+			} else if unicode.IsLetter(l.currentChar) {
+				tok, err := l.identifier()
+				if err != nil {
+					fmt.Println(err.Error())
+					return l.endOfFileToken()
+				}
+				return tok
 			}
 		}
 	}
 	return illegalToken()
+}
+
+func (l *Lexer) identifier() (token.Token, error) {
+	start := l.currentPos
+	l.readChar()
+	for unicode.IsLetter(l.currentChar) {
+		l.readChar()
+	}
+	if l.isAtEnd() {
+		return token.New(token.IDENTIFIER, string(l.input[start:l.currentPos]), "", start, l.currentPos-1), nil
+	}
+	if !l.isWhiteSpace() {
+		return token.Token{}, fmt.Errorf("error: invalid identifer at line: %d, column %d", l.line, l.currentPos)
+	}
+	return token.New(token.IDENTIFIER, string(l.input[start:l.currentPos]), "", start, l.currentPos-1), nil
 }
 
 func (l *Lexer) ignoreWhiteSpace() {

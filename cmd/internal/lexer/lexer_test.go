@@ -7,7 +7,7 @@ import (
 	"github.com/iamBharatManral/atom.git/cmd/internal/token"
 )
 
-func TestLiterals(t *testing.T) {
+func TestTokens(t *testing.T) {
 	tests := []struct {
 		name  string
 		input string
@@ -44,6 +44,10 @@ func TestLiterals(t *testing.T) {
 			token.New(token.INTEGER, "", 3, 2, 2),
 			token.New(token.EOF, "", "", 3, 3),
 		}, input: "2+3"},
+		{name: "identifier let", want: []token.Token{
+			token.New(token.IDENTIFIER, "let", "", 0, 2),
+			token.New(token.EOF, "", "", 4, 4),
+		}, input: "let "},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
