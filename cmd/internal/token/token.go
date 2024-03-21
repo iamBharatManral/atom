@@ -14,7 +14,22 @@ const (
 	FLOAT   = "FLOAT"
 
 	IDENTIFIER = "IDENTIFIER"
+	ASSIGN     = "ASSIGN"
 )
+
+var keywords = make(map[string]string)
+
+func RegisterKeyWords() {
+	keywords["let"] = "let"
+}
+
+func IsKeyword(key string) bool {
+	return keywords[key] == key
+}
+
+func GetKeyword(key string) string {
+	return keywords[key]
+}
 
 type Token struct {
 	literal   any

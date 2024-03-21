@@ -42,6 +42,8 @@ func (l *Lexer) NextToken() token.Token {
 		return token.New(token.STAR, "*", "", l.currentPos, l.currentPos)
 	case '/':
 		return token.New(token.SLASH, "/", "", l.currentPos, l.currentPos)
+	case '=':
+		return token.New(token.ASSIGN, "=", "", l.currentPos, l.currentPos)
 	case '"':
 		{
 			tok, err := l.stringToken()
@@ -74,18 +76,18 @@ func (l *Lexer) NextToken() token.Token {
 }
 
 func (l *Lexer) identifier() (token.Token, error) {
+	// let
 	start := l.currentPos
-	l.readChar()
-	for unicode.IsLetter(l.currentChar) {
+	for unicode.IsLetter(l.peek()) {
 		l.readChar()
 	}
-	if l.isAtEnd() {
-		return token.New(token.IDENTIFIER, string(l.input[start:l.currentPos]), "", start, l.currentPos-1), nil
+	if l.currentPos+1 == len(l.input) {
+		return token.New(token.IDENTIFIER, string(l.input[start:l.currentPos+1]), "", start, l.currentPos), nil
 	}
-	if !l.isWhiteSpace() {
-		return token.Token{}, fmt.Errorf("error: invalid identifer at line: %d, column %d", l.line, l.currentPos)
+	if !unicode.IsSpace(l.peek()) && string(l.peek()) != "=" {
+		return token.Token{}, fmt.Errorf("error: invalid identifer at line: %d, column %d", l.line, l.currentPos+1)
 	}
-	return token.New(token.IDENTIFIER, string(l.input[start:l.currentPos]), "", start, l.currentPos-1), nil
+	return token.New(token.IDENTIFIER, string(l.input[start:l.currentPos+1]), "", start, l.currentPos), nil
 }
 
 func (l *Lexer) ignoreWhiteSpace() {

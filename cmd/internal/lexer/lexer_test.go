@@ -48,6 +48,13 @@ func TestTokens(t *testing.T) {
 			token.New(token.IDENTIFIER, "let", "", 0, 2),
 			token.New(token.EOF, "", "", 4, 4),
 		}, input: "let "},
+		{name: "let statement: let id = 100", want: []token.Token{
+			token.New(token.IDENTIFIER, "let", "", 0, 2),
+			token.New(token.IDENTIFIER, "id", "", 4, 5),
+			token.New(token.ASSIGN, "=", "", 7, 7),
+			token.New(token.INTEGER, "", 100, 9, 11),
+			token.New(token.EOF, "", "", 12, 12),
+		}, input: "let id = 100"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -25,6 +25,18 @@ type BinaryExpression struct {
 	Node
 }
 
+type Identifier struct {
+	Value string
+	Node
+}
+
+type LetStatement struct {
+	Left     Identifier
+	Right    any
+	Operator string
+	Node
+}
+
 type Program struct {
 	Body []Statement
 	Node

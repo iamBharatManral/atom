@@ -40,3 +40,17 @@ func DivisonByZeroError() result.Result {
 		Value: "error: division by zero",
 	}
 }
+
+func SyntaxError(message string) result.Result {
+	return result.Result{
+		Type:  "error",
+		Value: message,
+	}
+}
+
+func UndefinedError(symbol string) result.Result {
+	return result.Result{
+		Type:  "error",
+		Value: fmt.Sprintf("error: undefined symbol %s", symbol),
+	}
+}

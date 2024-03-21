@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/user"
 
+	"github.com/iamBharatManral/atom.git/cmd/internal/env"
 	"github.com/iamBharatManral/atom.git/cmd/internal/interpreter"
 	"github.com/iamBharatManral/atom.git/cmd/internal/lexer"
 	"github.com/iamBharatManral/atom.git/cmd/internal/parser"
@@ -19,6 +20,7 @@ func Start() {
 	util.Banner()
 	message()
 	scanner := bufio.NewScanner(os.Stdin)
+	env := env.New()
 	for {
 		fmt.Print(PROMPT)
 		scanner.Scan()
@@ -33,9 +35,11 @@ func Start() {
 		parser := parser.New(lexer)
 		program := parser.Parse()
 		if len(program.Body) > 0 {
-			result := interpreter.Eval(program.Body[0])
+			result := interpreter.Eval(program.Body[0], env)
 			if result.Type == "error" {
 				fmt.Println(result.Value)
+				continue
+			} else if result.Type == "" {
 				continue
 			}
 			fmt.Println(result.Value)

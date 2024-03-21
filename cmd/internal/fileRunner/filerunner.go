@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/iamBharatManral/atom.git/cmd/internal/env"
 	"github.com/iamBharatManral/atom.git/cmd/internal/interpreter"
 	"github.com/iamBharatManral/atom.git/cmd/internal/lexer"
 	"github.com/iamBharatManral/atom.git/cmd/internal/parser"
@@ -25,9 +26,11 @@ func Execute(filename string) {
 	lexer := lexer.New([]rune(string(input)))
 	parser := parser.New(lexer)
 	program := parser.Parse()
-	result := interpreter.Eval(program)
+	env := env.New()
+	result := interpreter.Eval(program, env)
 	if result.Type == "error" {
 		log.Fatal(result.Value)
+	} else if result.Type == "" {
 		return
 	}
 	fmt.Println(result.Value)

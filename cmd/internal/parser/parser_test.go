@@ -182,6 +182,32 @@ func TestLiteralsAndExpressions(t *testing.T) {
 1
 4 *5
 `},
+		{name: "let declaration", want: []ast.Statement{
+			ast.LetStatement{
+				Left: ast.Identifier{
+					Node: ast.Node{
+						Type:  "Identifier",
+						Start: 4,
+						End:   4,
+					},
+					Value: "a",
+				},
+				Right: ast.Literal{
+					Node: ast.Node{
+						Type:  "Literal",
+						Start: 8,
+						End:   9,
+					},
+					Value: 10,
+				},
+				Operator: "=",
+				Node: ast.Node{
+					Start: 0,
+					End:   9,
+					Type:  "Declaration",
+				},
+			},
+		}, input: `let a = 10`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
