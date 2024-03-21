@@ -21,9 +21,33 @@ func Eval(node ast.AstNode, env *env.Environment) result.Result {
 		return evalLetStatement(node, env)
 	case ast.Identifier:
 		return evalIdentifier(node, env)
+	case ast.AssignmentStatement:
+		return evalAssignment(node, env)
 	default:
 		return error.UnsupportedTokensError()
 	}
+}
+
+func evalAssignment(stmt ast.AssignmentStatement, env *env.Environment) result.Result {
+	id := stmt.Left.Value
+	if _, ok := env.Get(string(id)); !ok {
+		return error.UndefinedError(id)
+	}
+	var rightValue any
+	switch right := stmt.Right.(type) {
+	case ast.Identifier:
+		if _, ok := env.Get(string(right.Value)); ok {
+			rightValue = Eval(right, env).Value
+		} else {
+			return error.UndefinedError(right.Value)
+		}
+	case ast.Literal:
+		rightValue = right.Value
+	default:
+		return error.SyntaxError("error: wrong type in right hand side of assignment")
+	}
+	env.Set(id, createResult("identifier", rightValue))
+	return result.Result{}
 }
 
 func evalStatements(stmts []ast.Statement, env *env.Environment) result.Result {
@@ -51,6 +75,8 @@ func evalLetStatement(stmt ast.LetStatement, env *env.Environment) result.Result
 			Type:  "literal",
 			Value: right.Value,
 		})
+	case ast.Identifier:
+		return evalIdentifier(stmt.Right.(ast.Identifier), env)
 	}
 	return result.Result{}
 }

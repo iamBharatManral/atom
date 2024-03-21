@@ -208,6 +208,32 @@ func TestLiteralsAndExpressions(t *testing.T) {
 				},
 			},
 		}, input: `let a = 10`},
+		{name: "assigment operation name = \"hello\"", want: []ast.Statement{
+			ast.AssignmentStatement{
+				Left: ast.Identifier{
+					Node: ast.Node{
+						Type:  "Identifier",
+						Start: 0,
+						End:   3,
+					},
+					Value: "name",
+				},
+				Right: ast.Literal{
+					Node: ast.Node{
+						Type:  "Literal",
+						Start: 7,
+						End:   13,
+					},
+					Value: "hello",
+				},
+				Operator: "=",
+				Node: ast.Node{
+					Start: 0,
+					End:   13,
+					Type:  "Assignment",
+				},
+			},
+		}, input: `name = "hello"`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

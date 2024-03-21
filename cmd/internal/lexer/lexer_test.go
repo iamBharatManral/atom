@@ -55,6 +55,12 @@ func TestTokens(t *testing.T) {
 			token.New(token.INTEGER, "", 100, 9, 11),
 			token.New(token.EOF, "", "", 12, 12),
 		}, input: "let id = 100"},
+		{name: "assignment operation: name = \"hello\"", want: []token.Token{
+			token.New(token.IDENTIFIER, "name", "", 0, 3),
+			token.New(token.ASSIGN, "=", "", 5, 5),
+			token.New(token.STRING, "\"hello\"", "hello", 7, 13),
+			token.New(token.EOF, "", "", 14, 14),
+		}, input: "name = \"hello\""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

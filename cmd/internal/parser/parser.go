@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+
 	"github.com/iamBharatManral/atom.git/cmd/internal/ast"
 	"github.com/iamBharatManral/atom.git/cmd/internal/lexer"
 	"github.com/iamBharatManral/atom.git/cmd/internal/token"
@@ -77,6 +78,9 @@ func (p *Parser) parseDeclaration() ast.Statement {
 }
 
 func (p *Parser) parseIdentifier() ast.Statement {
+	if p.peekToken.TokenType() == token.ASSIGN {
+		return p.parseAssignment()
+	}
 	return ast.Identifier{
 		Node: ast.Node{
 			Start: p.currentToken.Start(),
@@ -88,6 +92,54 @@ func (p *Parser) parseIdentifier() ast.Statement {
 }
 func (p *Parser) addError(e error) {
 	p.errors = append(p.errors, e)
+}
+
+func (p *Parser) parseAssignment() ast.Statement {
+	// a = 10
+	start := p.currentToken.Start()
+	left := ast.Identifier{
+		Node: ast.Node{
+			Start: p.currentToken.Start(),
+			End:   p.currentToken.End(),
+			Type:  "Identifier",
+		},
+		Value: p.currentToken.Lexeme(),
+	}
+	operator := p.peekToken.Lexeme()
+	p.nextToken()
+	var right any
+	switch p.peekToken.TokenType() {
+	case token.IDENTIFIER:
+		right = ast.Identifier{
+			Node: ast.Node{
+				Start: p.peekToken.Start(),
+				End:   p.peekToken.End(),
+				Type:  "Identifier",
+			},
+			Value: p.peekToken.Lexeme(),
+		}
+	case token.INTEGER, token.FLOAT, token.STRING:
+		right = ast.Literal{
+			Node: ast.Node{
+				Start: p.peekToken.Start(),
+				End:   p.peekToken.End(),
+				Type:  "Literal",
+			},
+			Value: p.peekToken.Value(),
+		}
+	}
+	end := p.peekToken.End()
+	p.nextToken()
+	return ast.AssignmentStatement{
+		Left:     left,
+		Right:    right,
+		Operator: operator,
+		Node: ast.Node{
+			Start: start,
+			End:   end,
+			Type:  "Assignment",
+		},
+	}
 }
 
 func (p *Parser) parseLetDeclaration() ast.Statement {

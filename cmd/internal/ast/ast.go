@@ -37,6 +37,13 @@ type LetStatement struct {
 	Node
 }
 
+type AssignmentStatement struct {
+	Left     Identifier
+	Right    any
+	Operator string
+	Node
+}
+
 type Program struct {
 	Body []Statement
 	Node
