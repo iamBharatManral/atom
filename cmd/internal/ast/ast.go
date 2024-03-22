@@ -30,6 +30,10 @@ type Identifier struct {
 	Node
 }
 
+type ErrorStatement struct {
+	Reason string
+}
+
 type LetStatement struct {
 	Left     Identifier
 	Right    any

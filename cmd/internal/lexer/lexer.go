@@ -23,7 +23,9 @@ func New(input []rune) *Lexer {
 		line:        1,
 	}
 }
-
+func (l *Lexer) Line() uint {
+	return l.line
+}
 func (l *Lexer) NextToken() token.Token {
 	if l.isAtEnd() {
 		return l.endOfFileToken()
@@ -53,6 +55,8 @@ func (l *Lexer) NextToken() token.Token {
 			}
 			return tok
 		}
+	case ';':
+		return token.New(token.SEMICOLON, ";", "", l.currentPos, l.currentPos)
 	default:
 		{
 			if unicode.IsDigit(l.currentChar) {
@@ -72,7 +76,24 @@ func (l *Lexer) NextToken() token.Token {
 			}
 		}
 	}
-	return illegalToken()
+	return illegalToken(l.currentPos)
+}
+
+func (l *Lexer) PeekToken(peek int) token.Token {
+	oldPos := l.currentPos
+	oldChar := l.currentChar
+	oldLine := l.line
+	var tt token.Token
+	for i := 1; i <= peek; i += 1 {
+		tt = l.NextToken()
+		if tt.TokenType() == token.SEMICOLON {
+			break
+		}
+	}
+	l.currentPos = oldPos
+	l.currentChar = oldChar
+	l.line = oldLine
+	return tt
 }
 
 func (l *Lexer) identifier() (token.Token, error) {
@@ -84,7 +105,7 @@ func (l *Lexer) identifier() (token.Token, error) {
 	if l.currentPos+1 == len(l.input) {
 		return token.New(token.IDENTIFIER, string(l.input[start:l.currentPos+1]), "", start, l.currentPos), nil
 	}
-	if !unicode.IsSpace(l.peek()) && string(l.peek()) != "=" {
+	if unicode.IsDigit(l.peek()) {
 		return token.Token{}, fmt.Errorf("error: invalid identifer at line: %d, column %d", l.line, l.currentPos+1)
 	}
 	return token.New(token.IDENTIFIER, string(l.input[start:l.currentPos+1]), "", start, l.currentPos), nil
@@ -96,8 +117,8 @@ func (l *Lexer) ignoreWhiteSpace() {
 	}
 }
 
-func illegalToken() token.Token {
-	return token.New("", "", token.ILLEGAL, 0, 0)
+func illegalToken(column int) token.Token {
+	return token.New("", "", token.ILLEGAL, column, column)
 }
 
 func (l *Lexer) endOfFileToken() token.Token {

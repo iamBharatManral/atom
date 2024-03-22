@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -23,7 +24,7 @@ func TestLiteralsAndExpressions(t *testing.T) {
 					End:   3,
 				},
 			},
-		}, input: "1933"},
+		}, input: "1933;"},
 		{name: "string literal \"word is my oyster\"", want: []ast.Statement{
 			ast.Literal{
 				Value: "word is my oyster",
@@ -33,7 +34,7 @@ func TestLiteralsAndExpressions(t *testing.T) {
 					End:   18,
 				},
 			},
-		}, input: "\"word is my oyster\""},
+		}, input: "\"word is my oyster\";"},
 		{name: "addtion of two numbers 12 + 13", want: []ast.Statement{
 			ast.BinaryExpression{
 				Left: ast.Literal{
@@ -59,7 +60,7 @@ func TestLiteralsAndExpressions(t *testing.T) {
 					Type:  "BinaryExpression",
 				},
 			},
-		}, input: "12 + 13"},
+		}, input: "12 + 13;"},
 		{name: "multiplication of two numbers 5 * 9 and division of two numbers 96 / 4", want: []ast.Statement{
 			ast.BinaryExpression{
 				Left: ast.Literal{
@@ -89,28 +90,28 @@ func TestLiteralsAndExpressions(t *testing.T) {
 				Left: ast.Literal{
 					Node: ast.Node{
 						Type:  "Literal",
-						Start: 6,
-						End:   7,
+						Start: 7,
+						End:   8,
 					},
 					Value: 96,
 				},
 				Right: ast.Literal{
 					Node: ast.Node{
 						Type:  "Literal",
-						Start: 11,
-						End:   11,
+						Start: 12,
+						End:   12,
 					},
 					Value: 4,
 				},
 				Operator: "/",
 				Node: ast.Node{
-					Start: 6,
-					End:   11,
+					Start: 7,
+					End:   12,
 					Type:  "BinaryExpression",
 				},
 			},
-		}, input: `5 * 9
-96 / 4
+		}, input: `5 * 9;
+96 / 4;
       `},
 		{name: "multiplication of two numbers 5 * 9 and literal string hello with 1 and another binary expression", want: []ast.Statement{
 			ast.BinaryExpression{
@@ -139,16 +140,16 @@ func TestLiteralsAndExpressions(t *testing.T) {
 			},
 			ast.Literal{
 				Node: ast.Node{
-					Start: 6,
-					End:   18,
+					Start: 7,
+					End:   19,
 					Type:  "Literal",
 				},
 				Value: "hello world",
 			},
 			ast.Literal{
 				Node: ast.Node{
-					Start: 20,
-					End:   20,
+					Start: 22,
+					End:   22,
 					Type:  "Literal",
 				},
 				Value: 1,
@@ -157,30 +158,30 @@ func TestLiteralsAndExpressions(t *testing.T) {
 				Left: ast.Literal{
 					Node: ast.Node{
 						Type:  "Literal",
-						Start: 22,
-						End:   22,
+						Start: 25,
+						End:   25,
 					},
 					Value: 4,
 				},
 				Right: ast.Literal{
 					Node: ast.Node{
 						Type:  "Literal",
-						Start: 25,
-						End:   25,
+						Start: 28,
+						End:   28,
 					},
 					Value: 5,
 				},
 				Operator: "*",
 				Node: ast.Node{
-					Start: 22,
-					End:   25,
+					Start: 25,
+					End:   28,
 					Type:  "BinaryExpression",
 				},
 			},
-		}, input: `5 * 9
-"hello world"
-1
-4 *5
+		}, input: `5 * 9;
+"hello world";
+1;
+4 *5;
 `},
 		{name: "let declaration", want: []ast.Statement{
 			ast.LetStatement{
@@ -204,10 +205,10 @@ func TestLiteralsAndExpressions(t *testing.T) {
 				Node: ast.Node{
 					Start: 0,
 					End:   9,
-					Type:  "Declaration",
+					Type:  "LetStatement",
 				},
 			},
-		}, input: `let a = 10`},
+		}, input: `let a = 10;`},
 		{name: "assigment operation name = \"hello\"", want: []ast.Statement{
 			ast.AssignmentStatement{
 				Left: ast.Identifier{
@@ -233,16 +234,61 @@ func TestLiteralsAndExpressions(t *testing.T) {
 					Type:  "Assignment",
 				},
 			},
-		}, input: `name = "hello"`},
+		}, input: `name = "hello";`},
+		{name: "multiple arithmetic expressions", want: []ast.Statement{
+			ast.BinaryExpression{
+				Left: ast.Literal{
+					Node: ast.Node{
+						Type:  "Literal",
+						Start: 0,
+						End:   1,
+					},
+					Value: 51,
+				},
+				Right: ast.BinaryExpression{
+					Node: ast.Node{
+						Type:  "BinaryExpression",
+						Start: 5,
+						End:   10,
+					},
+					Operator: "*",
+					Left: ast.Literal{
+						Node: ast.Node{
+							Start: 5,
+							End:   6,
+							Type:  "Literal",
+						},
+						Value: 23,
+					},
+					Right: ast.Literal{
+						Node: ast.Node{
+							Start: 10,
+							End:   10,
+							Type:  "Literal",
+						},
+						Value: 4,
+					},
+				},
+				Operator: "+",
+				Node: ast.Node{
+					Start: 0,
+					End:   10,
+					Type:  "BinaryExpression",
+				},
+			},
+		}, input: `51 + 23 * 4;`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			lexer := lexer.New([]rune(tt.input))
 			parser := Parser{
-				lexer: lexer,
+				lexer:        lexer,
+				currentToken: lexer.NextToken(),
+				peekToken:    lexer.NextToken(),
 			}
 			result := parser.Parse()
 			for i := range result.Body {
+				fmt.Println(result.Body[i])
 				if !reflect.DeepEqual(result.Body[i], tt.want[i]) {
 					t.Errorf("got %+v, want %+v", result.Body[i], tt.want[i])
 				}

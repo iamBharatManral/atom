@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/iamBharatManral/atom.git/cmd/internal/ast"
 	"github.com/iamBharatManral/atom.git/cmd/internal/lexer"
@@ -12,7 +12,7 @@ type Parser struct {
 	lexer        *lexer.Lexer
 	currentToken token.Token
 	peekToken    token.Token
-	errors       []error
+	Errors       []string
 }
 
 func New(lexer *lexer.Lexer) *Parser {
@@ -25,6 +25,7 @@ func New(lexer *lexer.Lexer) *Parser {
 
 func (p *Parser) Parse() ast.Program {
 	token.RegisterKeyWords()
+	token.RegisterPriorities()
 	program := ast.Program{
 		Node: ast.Node{
 			Type:  "Program",
@@ -33,8 +34,8 @@ func (p *Parser) Parse() ast.Program {
 		},
 		Body: []ast.Statement{},
 	}
-	for p.currentToken.TokenType() != token.EOF {
-		stmt := p.parseStatement()
+	for p.peekToken.TokenType() != token.EOF {
+		stmt := p.parseSingleStatement()
 		if stmt != nil {
 			program.Body = append(program.Body, stmt)
 		}
@@ -43,22 +44,33 @@ func (p *Parser) Parse() ast.Program {
 	return program
 }
 
-func (p *Parser) parseStatement() ast.Statement {
-	switch p.currentToken.TokenType() {
-	case token.INTEGER, token.FLOAT, token.STRING:
-		return p.parseLiteral()
-	case token.IDENTIFIER:
-		return p.parseDeclaration()
+func (p *Parser) parseSingleStatement() ast.Statement {
+	switch p.peekToken.TokenType() {
+	case token.PLUS, token.MINUS, token.STAR, token.SLASH, token.SEMICOLON:
+		return p.parseExpression()
+	default:
+		return p.parseStatement()
 	}
-	return nil
 }
 
-func (p *Parser) parseLiteral() ast.Statement {
+func (p *Parser) parseExpression() ast.Statement {
 	switch p.peekToken.TokenType() {
 	case token.PLUS, token.MINUS, token.STAR, token.SLASH:
 		return p.parseBinaryExpression()
+	case token.SEMICOLON:
+		return p.parseUnaryExpression()
 	default:
-		return ast.Literal{
+		p.addError(fmt.Sprintf("error: wrong token in right side of the expression at line: %d, column: %d", p.lexer.Line(), p.peekToken.Start()+1))
+		return nil
+	}
+}
+
+func (p *Parser) parseUnaryExpression() ast.Statement {
+	switch p.currentToken.TokenType() {
+	case token.IDENTIFIER:
+		return p.parseIdentifier()
+	default:
+		l := ast.Literal{
 			Node: ast.Node{
 				Start: p.currentToken.Start(),
 				End:   p.currentToken.End(),
@@ -66,22 +78,23 @@ func (p *Parser) parseLiteral() ast.Statement {
 			},
 			Value: p.currentToken.Value(),
 		}
+		p.nextToken()
+		return l
 	}
 }
 
-func (p *Parser) parseDeclaration() ast.Statement {
-	switch token.GetKeyword(p.currentToken.Lexeme()) {
-	case "let":
+func (p *Parser) parseStatement() ast.Statement {
+	if token.GetKeyword(p.currentToken.Lexeme()) == "let" {
 		return p.parseLetDeclaration()
+	}
+	if p.peekToken.TokenType() == token.ASSIGN {
+		return p.parseAssignment()
 	}
 	return p.parseIdentifier()
 }
 
 func (p *Parser) parseIdentifier() ast.Statement {
-	if p.peekToken.TokenType() == token.ASSIGN {
-		return p.parseAssignment()
-	}
-	return ast.Identifier{
+	i := ast.Identifier{
 		Node: ast.Node{
 			Start: p.currentToken.Start(),
 			End:   p.currentToken.End(),
@@ -89,154 +102,265 @@ func (p *Parser) parseIdentifier() ast.Statement {
 		},
 		Value: p.currentToken.Lexeme(),
 	}
-}
-func (p *Parser) addError(e error) {
-	p.errors = append(p.errors, e)
+	p.nextToken()
+	return i
 }
 
 func (p *Parser) parseAssignment() ast.Statement {
 	// a = 10
 	start := p.currentToken.Start()
+	if p.currentToken.TokenType() != token.IDENTIFIER {
+		p.addError("error: wrong type in left side of assignment")
+		return nil
+	}
 	left := ast.Identifier{
+		Value: p.currentToken.Lexeme(),
 		Node: ast.Node{
 			Start: p.currentToken.Start(),
 			End:   p.currentToken.End(),
 			Type:  "Identifier",
 		},
-		Value: p.currentToken.Lexeme(),
 	}
-	operator := p.peekToken.Lexeme()
 	p.nextToken()
-	var right any
-	switch p.peekToken.TokenType() {
-	case token.IDENTIFIER:
-		right = ast.Identifier{
+	return p.parseRHS("assign", left, start)
+}
+
+func (p *Parser) parseRHS(kind string, left ast.Identifier, start int) ast.Statement {
+	var tp string
+	if kind == "let" {
+		tp = "LetStatement"
+	} else {
+		tp = "Assignment"
+	}
+	if p.currentToken.TokenType() != token.ASSIGN {
+		p.addError("error: invalid operator in let statement, should be = operator")
+		return nil
+	}
+	operator := p.currentToken.Lexeme()
+	var rightSide any
+	nextTokenOperator := p.lexer.PeekToken(1)
+	nextTokenOpeatorType := nextTokenOperator.TokenType()
+	if nextTokenOpeatorType == token.PLUS || nextTokenOpeatorType == token.MINUS || nextTokenOpeatorType == token.STAR || nextTokenOpeatorType == token.SLASH {
+		p.nextToken()
+		rightSide = p.parseBinaryExpression()
+		return ast.LetStatement{
+			Left:     left,
+			Right:    rightSide,
+			Operator: operator,
 			Node: ast.Node{
-				Start: p.peekToken.Start(),
-				End:   p.peekToken.End(),
-				Type:  "Identifier",
+				Start: start,
+				End:   rightSide.(ast.BinaryExpression).Node.End,
+				Type:  tp,
 			},
-			Value: p.peekToken.Lexeme(),
 		}
-	case token.INTEGER, token.FLOAT, token.STRING:
-		right = ast.Literal{
-			Node: ast.Node{
-				Start: p.peekToken.Start(),
-				End:   p.peekToken.End(),
-				Type:  "Literal",
-			},
-			Value: p.peekToken.Value(),
+	} else {
+		p.nextToken()
+		var end int
+		switch p.currentToken.TokenType() {
+		case token.IDENTIFIER:
+			rightSide = p.parseIdentifier()
+			end = rightSide.(ast.Identifier).End
+		case token.STRING, token.INTEGER, token.FLOAT:
+			rightSide = ast.Literal{
+				Value: p.currentToken.Value(),
+				Node: ast.Node{
+					Start: p.currentToken.Start(),
+					End:   p.currentToken.End(),
+					Type:  "Literal",
+				},
+			}
+			end = p.currentToken.End()
+			p.nextToken()
+		default:
+			p.addError("error: wrong type in right side of assignment")
+			return nil
+		}
+		if kind == "let" {
+			return ast.LetStatement{
+				Left:     left,
+				Right:    rightSide,
+				Operator: operator,
+				Node: ast.Node{
+					Start: start,
+					End:   end,
+					Type:  tp,
+				},
+			}
+
+		} else {
+			return ast.AssignmentStatement{
+				Left:     left,
+				Right:    rightSide,
+				Operator: operator,
+				Node: ast.Node{
+					Start: start,
+					End:   end,
+					Type:  tp,
+				},
+			}
 		}
 	}
-	end := p.peekToken.End()
-	p.nextToken()
-	return ast.AssignmentStatement{
-		Left:     left,
-		Right:    right,
-		Operator: operator,
-		Node: ast.Node{
-			Start: start,
-			End:   end,
-			Type:  "Assignment",
-		},
-	}
+
 }
 
 func (p *Parser) parseLetDeclaration() ast.Statement {
 	// let a = 10
 	start := p.currentToken.Start()
 	if p.peekToken.TokenType() != token.IDENTIFIER {
-		p.addError(errors.New("error: wrong type in left side of assignment"))
+		p.addError("error: wrong type in left side of assignment")
 		return nil
 	}
+	p.nextToken()
 	left := ast.Identifier{
-		Value: p.peekToken.Lexeme(),
+		Value: p.currentToken.Lexeme(),
 		Node: ast.Node{
-			Start: p.peekToken.Start(),
-			End:   p.peekToken.End(),
+			Start: p.currentToken.Start(),
+			End:   p.currentToken.End(),
 			Type:  "Identifier",
 		},
 	}
 	p.nextToken()
-	if p.peekToken.TokenType() != token.ASSIGN {
-		p.addError(errors.New("error: invalid operator in let statement"))
-		return nil
-	}
-	p.nextToken()
-	operator := p.currentToken.Lexeme()
-	var right any
-	switch p.peekToken.TokenType() {
-	case token.IDENTIFIER:
-		right = ast.Identifier{
-			Value: p.peekToken.Lexeme(),
-			Node: ast.Node{
-				Start: p.peekToken.Start(),
-				End:   p.peekToken.End(),
-				Type:  "Identifier",
-			},
-		}
-	case token.STRING, token.INTEGER, token.FLOAT:
-		right = ast.Literal{
-			Value: p.peekToken.Value(),
-			Node: ast.Node{
-				Start: p.peekToken.Start(),
-				End:   p.peekToken.End(),
-				Type:  "Literal",
-			},
-		}
-	default:
-		p.addError(errors.New("error: wrong type in right side of assignment"))
-		return nil
-	}
-	end := p.peekToken.End()
-	p.nextToken()
-	return ast.LetStatement{
-		Left:     left,
-		Right:    right,
-		Operator: operator,
-		Node: ast.Node{
-			Start: start,
-			End:   end,
-			Type:  "Declaration",
-		},
-	}
+	return p.parseRHS("let", left, start)
 }
 
 func (p *Parser) parseBinaryExpression() ast.Statement {
+	// 2 + 3
 	start := p.currentToken.Start()
-	left := ast.Literal{
-		Node: ast.Node{
-			Start: p.currentToken.Start(),
-			End:   p.currentToken.End(),
-			Type:  "Literal",
-		},
-		Value: p.currentToken.Value(),
+	var leftSide any
+	if p.currentToken.TokenType() == token.IDENTIFIER {
+		leftSide = p.parseIdentifier()
+	} else {
+		leftSide = ast.Literal{
+			Node: ast.Node{
+				Start: p.currentToken.Start(),
+				End:   p.currentToken.End(),
+				Type:  "Literal",
+			},
+			Value: p.currentToken.Value(),
+		}
+		p.nextToken()
+
 	}
-	operator := p.peekToken.Lexeme()
-	p.nextToken()
-	end := p.peekToken.End()
-	right := ast.Literal{
-		Node: ast.Node{
-			Start: p.peekToken.Start(),
-			End:   end,
-			Type:  "Literal",
-		},
-		Value: p.peekToken.Value(),
-	}
-	p.nextToken()
-	return ast.BinaryExpression{
-		Node: ast.Node{
-			Start: start,
-			End:   end,
-			Type:  "BinaryExpression",
-		},
-		Left:     left,
-		Right:    right,
-		Operator: operator,
+	firstOperatorToken := p.currentToken
+	secondOperatorToken := p.lexer.PeekToken(1)
+	if secondOperatorToken.TokenType() != token.SEMICOLON {
+		if token.GetPriority(secondOperatorToken.TokenType()) > token.GetPriority(firstOperatorToken.TokenType()) {
+			p.nextToken()
+			rightSide := p.parseBinaryExpression()
+			return ast.BinaryExpression{
+				Node: ast.Node{
+					Start: start,
+					End:   rightSide.(ast.BinaryExpression).Node.End,
+					Type:  "BinaryExpression",
+				},
+				Left:     leftSide,
+				Right:    rightSide,
+				Operator: firstOperatorToken.Lexeme(),
+			}
+
+		} else {
+			p.nextToken()
+			var rightSide any
+			if p.currentToken.TokenType() == token.IDENTIFIER {
+				rightSide = p.parseIdentifier()
+				return ast.BinaryExpression{
+					Node: ast.Node{
+						Start: start,
+						End:   rightSide.(ast.Identifier).Node.End,
+						Type:  "BinaryExpression",
+					},
+					Right: p.parseExpression(),
+					Left: ast.BinaryExpression{
+						Node: ast.Node{
+							Start: start,
+							End:   rightSide.(ast.Identifier).Node.End,
+							Type:  "BinaryExpression",
+						},
+						Left:     leftSide,
+						Right:    rightSide,
+						Operator: firstOperatorToken.Lexeme(),
+					},
+					Operator: secondOperatorToken.Lexeme(),
+				}
+			} else {
+				rightSide = ast.Literal{
+					Node: ast.Node{
+						Start: p.currentToken.Start(),
+						End:   p.currentToken.End(),
+						Type:  "Literal",
+					},
+					Value: p.currentToken.Value(),
+				}
+				p.nextToken()
+				p.nextToken()
+				return ast.BinaryExpression{
+					Node: ast.Node{
+						Start: start,
+						End:   rightSide.(ast.Literal).End,
+						Type:  "BinaryExpression",
+					},
+					Right: p.parseExpression(),
+					Left: ast.BinaryExpression{
+						Node: ast.Node{
+							Start: start,
+							End:   rightSide.(ast.Literal).End,
+							Type:  "BinaryExpression",
+						},
+						Left:     leftSide,
+						Right:    rightSide,
+						Operator: firstOperatorToken.Lexeme(),
+					},
+					Operator: secondOperatorToken.Lexeme(),
+				}
+			}
+		}
+
+	} else {
+		operator := p.currentToken.Lexeme()
+		p.nextToken()
+		var rightSide any
+		if p.currentToken.TokenType() == token.IDENTIFIER {
+			rightSide = p.parseIdentifier()
+			return ast.BinaryExpression{
+				Node: ast.Node{
+					Start: start,
+					End:   rightSide.(ast.Identifier).End,
+					Type:  "BinaryExpression",
+				},
+				Left:     leftSide,
+				Right:    rightSide,
+				Operator: operator,
+			}
+		} else {
+			rightSide := ast.Literal{
+				Node: ast.Node{
+					Start: p.currentToken.Start(),
+					End:   p.currentToken.End(),
+					Type:  "Literal",
+				},
+				Value: p.currentToken.Value(),
+			}
+			p.nextToken()
+			return ast.BinaryExpression{
+				Node: ast.Node{
+					Start: start,
+					End:   rightSide.Node.End,
+					Type:  "BinaryExpression",
+				},
+				Left:     leftSide,
+				Right:    rightSide,
+				Operator: firstOperatorToken.Lexeme(),
+			}
+
+		}
 	}
 }
 
 func (p *Parser) nextToken() {
 	p.currentToken = p.peekToken
 	p.peekToken = p.lexer.NextToken()
+}
+
+func (p *Parser) addError(error string) {
+	p.Errors = append(p.Errors, error)
 }

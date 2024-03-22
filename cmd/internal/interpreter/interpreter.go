@@ -16,7 +16,7 @@ func Eval(node ast.AstNode, env *env.Environment) result.Result {
 	case ast.Literal:
 		return evalLiteral(node)
 	case ast.BinaryExpression:
-		return evalArithmetic(node, env)
+		return evalBinaryExpression(node, env)
 	case ast.LetStatement:
 		return evalLetStatement(node, env)
 	case ast.Identifier:
@@ -33,23 +33,35 @@ func evalAssignment(stmt ast.AssignmentStatement, env *env.Environment) result.R
 	if _, ok := env.Get(string(id)); !ok {
 		return error.UndefinedError(id)
 	}
-	var rightValue any
-	switch right := stmt.Right.(type) {
-	case ast.Identifier:
-		if _, ok := env.Get(string(right.Value)); ok {
-			rightValue = Eval(right, env).Value
-		} else {
-			return error.UndefinedError(right.Value)
-		}
-	case ast.Literal:
-		rightValue = right.Value
-	default:
-		return error.SyntaxError("error: wrong type in right hand side of assignment")
-	}
-	env.Set(id, createResult("identifier", rightValue))
-	return result.Result{}
+	return evalRHS(ast.LetStatement(stmt), env)
 }
 
+func evalRHS(stmt ast.LetStatement, env *env.Environment) result.Result {
+	id := stmt.Left.Value
+	switch right := stmt.Right.(type) {
+	case ast.Literal:
+		env.Set(id, createResult("literal", right.Value))
+	case ast.Identifier:
+		r := evalIdentifier(stmt.Right.(ast.Identifier), env)
+		if r.Type == "error" {
+			return r
+		}
+		env.Set(id, createResult("identifier", r.Value))
+	case ast.BinaryExpression:
+		r := evalBinaryExpression(stmt.Right.(ast.BinaryExpression), env)
+		if r.Type == "error" {
+			return r
+		}
+		env.Set(id, result.Result{
+			Type:  "BinaryExpression",
+			Value: r.Value,
+		})
+	default:
+		return error.UnsupportedTokensError()
+	}
+	return result.Result{}
+
+}
 func evalStatements(stmts []ast.Statement, env *env.Environment) result.Result {
 	var completeResult string
 	for i := range stmts {
@@ -68,17 +80,7 @@ func evalStatements(stmts []ast.Statement, env *env.Environment) result.Result {
 }
 
 func evalLetStatement(stmt ast.LetStatement, env *env.Environment) result.Result {
-	id := stmt.Left.Value
-	switch right := stmt.Right.(type) {
-	case ast.Literal:
-		env.Set(id, result.Result{
-			Type:  "literal",
-			Value: right.Value,
-		})
-	case ast.Identifier:
-		return evalIdentifier(stmt.Right.(ast.Identifier), env)
-	}
-	return result.Result{}
+	return evalRHS(stmt, env)
 }
 
 func evalIdentifier(stmt ast.Identifier, env *env.Environment) result.Result {
@@ -99,27 +101,38 @@ func typeAsString(v any) string {
 	return fmt.Sprintf("%v", v)
 }
 
-func evalArithmetic(stmt ast.BinaryExpression, env *env.Environment) result.Result {
+func evalBinaryExpression(stmt ast.BinaryExpression, env *env.Environment) result.Result {
+	var tempLeft, tempRight any
+	if _, ok := stmt.Left.(ast.BinaryExpression); ok {
+		tempLeft = evalBinaryExpression(stmt.Left.(ast.BinaryExpression), env)
+	} else {
+		tempLeft = Eval(stmt.Left, env)
+	}
+	if _, ok := stmt.Right.(ast.BinaryExpression); ok {
+		tempRight = evalBinaryExpression(stmt.Right.(ast.BinaryExpression), env)
+	} else {
+		tempRight = Eval(stmt.Right, env)
+	}
+	left := createResult(tempLeft.(result.Result).Type, tempLeft.(result.Result).Value)
+	right := createResult(tempRight.(result.Result).Type, tempRight.(result.Result).Value)
 	switch stmt.Operator {
 	case "+":
-		return evalAddition(stmt, env)
+		return evalAddition(left, right)
 	case "-":
-		return evalSubtraction(stmt, env)
+		return evalSubtraction(left, right)
 	case "*":
-		return evalMultiplication(stmt, env)
+		return evalMultiplication(left, right)
 	case "/":
-		return evalDivision(stmt, env)
+		return evalDivision(left, right)
 	default:
 		return error.UnsupportedOperatorError(stmt.Operator)
 	}
 }
 
-func evalAddition(stmt ast.BinaryExpression, env *env.Environment) result.Result {
-	left := Eval(stmt.Left, env)
+func evalAddition(left, right result.Result) result.Result {
 	if left.Type == "error" {
 		return left
 	}
-	right := Eval(stmt.Right, env)
 	if right.Type == "error" {
 		return right
 	}
@@ -143,12 +156,10 @@ func evalAddition(stmt ast.BinaryExpression, env *env.Environment) result.Result
 	return error.UnsupportedTypeError(left, "+")
 }
 
-func evalSubtraction(stmt ast.BinaryExpression, env *env.Environment) result.Result {
-	left := Eval(stmt.Left, env)
+func evalSubtraction(left, right result.Result) result.Result {
 	if left.Type == "error" {
 		return left
 	}
-	right := Eval(stmt.Right, env)
 	if right.Type == "error" {
 		return right
 	}
@@ -174,12 +185,10 @@ func createResult(t string, v any) result.Result {
 	}
 }
 
-func evalMultiplication(stmt ast.BinaryExpression, env *env.Environment) result.Result {
-	left := Eval(stmt.Left, env)
+func evalMultiplication(left, right result.Result) result.Result {
 	if left.Type == "error" {
 		return left
 	}
-	right := Eval(stmt.Right, env)
 	if right.Type == "error" {
 		return right
 	}
@@ -198,12 +207,10 @@ func evalMultiplication(stmt ast.BinaryExpression, env *env.Environment) result.
 	return error.UnsupportedTypeError(left, "*")
 }
 
-func evalDivision(stmt ast.BinaryExpression, env *env.Environment) result.Result {
-	left := Eval(stmt.Left, env)
+func evalDivision(left, right result.Result) result.Result {
 	if left.Type == "error" {
 		return left
 	}
-	right := Eval(stmt.Right, env)
 	if right.Type == "error" {
 		return right
 	}

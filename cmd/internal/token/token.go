@@ -1,13 +1,13 @@
 package token
 
 const (
-	ILLEGAL = "ILLEGAL"
-	EOF     = "EOF"
-
-	PLUS  = "PLUS"
-	MINUS = "MINUS"
-	STAR  = "STAR"
-	SLASH = "SLASH"
+	ILLEGAL   = "ILLEGAL"
+	EOF       = "EOF"
+	SEMICOLON = "SEMICOLON"
+	PLUS      = "PLUS"
+	MINUS     = "MINUS"
+	STAR      = "STAR"
+	SLASH     = "SLASH"
 
 	STRING  = "STRING"
 	INTEGER = "INTEGER"
@@ -18,7 +18,23 @@ const (
 )
 
 var keywords = make(map[string]string)
+var priorities = make(map[string]int)
 
+func RegisterPriorities() {
+	priorities["NONE"] = 0
+	priorities["PLUS"] = 1
+	priorities["MINUS"] = 1
+	priorities["STAR"] = 2
+	priorities["SLASH"] = 2
+}
+
+func GetPriority(token string) int {
+	if priority, ok := priorities[token]; ok {
+		return priority
+	}
+	return priorities["NONE"]
+
+}
 func RegisterKeyWords() {
 	keywords["let"] = "let"
 }

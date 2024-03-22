@@ -31,9 +31,19 @@ func Start() {
 		if string(input) == ":q" || string(input) == ":quit" {
 			os.Exit(0)
 		}
+		if input[len(input)-1] != ';' {
+			fmt.Println("error: missing semicolon at the end!")
+			continue
+		}
 		lexer := lexer.New(input)
 		parser := parser.New(lexer)
 		program := parser.Parse()
+		if len(parser.Errors) > 0 {
+			for _, err := range parser.Errors {
+				fmt.Println(err)
+			}
+			continue
+		}
 		if len(program.Body) > 0 {
 			result := interpreter.Eval(program.Body[0], env)
 			if result.Type == "error" {
@@ -42,7 +52,7 @@ func Start() {
 			} else if result.Type == "" {
 				continue
 			}
-			fmt.Println(result.Value)
+			fmt.Printf("%v\n\n", result.Value)
 		}
 	}
 }
@@ -55,5 +65,5 @@ func message() {
 	} else {
 		username = currentUser.Username
 	}
-	fmt.Printf("Welcome %s to the beginning of the language universe\n\n", username)
+	fmt.Printf("Welcome %s! to the beginning of the language universe 🪐✨\n\n", username)
 }
