@@ -3,39 +3,32 @@ package repl
 import (
 	"bufio"
 	"fmt"
-	"log"
-	"os"
-	"os/user"
-
 	"github.com/iamBharatManral/atom.git/cmd/internal/env"
 	"github.com/iamBharatManral/atom.git/cmd/internal/interpreter"
 	"github.com/iamBharatManral/atom.git/cmd/internal/lexer"
 	"github.com/iamBharatManral/atom.git/cmd/internal/parser"
 	"github.com/iamBharatManral/atom.git/cmd/internal/util"
+	"log"
+	"os"
+	"os/exec"
+	"os/user"
+	"runtime"
 )
 
 const PROMPT = "λ> "
 
+var inputCh = make(chan string)
+
 func Start() {
 	util.Banner()
 	message()
-	scanner := bufio.NewScanner(os.Stdin)
 	env := env.New()
 	for {
-		fmt.Print(PROMPT)
-		scanner.Scan()
-		if err := scanner.Err(); err != nil {
-			log.Fatal(err)
-		}
-		input := []rune(scanner.Text())
-		if string(input) == ":q" || string(input) == ":quit" {
-			os.Exit(0)
-		}
-		if input[len(input)-1] != ';' {
-			fmt.Println("error: missing semicolon at the end!")
+		input := userInput()
+		if input == "" {
 			continue
 		}
-		lexer := lexer.New(input)
+		lexer := lexer.New([]rune(input))
 		parser := parser.New(lexer)
 		program := parser.Parse()
 		if len(parser.Errors) > 0 {
@@ -44,19 +37,46 @@ func Start() {
 			}
 			continue
 		}
-		if len(program.Body) > 0 {
-			result := interpreter.Eval(program.Body[0], env)
+		for _, stmt := range program.Body {
+			result := interpreter.Eval(stmt, env)
 			if result.Type == "error" {
 				fmt.Println(result.Value)
 				continue
 			} else if result.Type == "" {
+				fmt.Println()
 				continue
 			}
-			fmt.Printf("%v\n\n", result.Value)
+			fmt.Printf("%v\n", result.Value)
+
 		}
 	}
 }
 
+func userInput() string {
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Print(PROMPT)
+	scanner.Scan()
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	input := scanner.Text()
+	if len(input) == 0 {
+		return ""
+	}
+	if input == ":q" || input == ":quit" {
+		os.Exit(0)
+	}
+	if input == "clear" {
+		clearTerminal()
+		return ""
+	}
+	if input[len(input)-1] != ';' {
+		fmt.Println("error: missing semicolon at the end!")
+		return ""
+	}
+	return input
+
+}
 func message() {
 	var username string
 	currentUser, err := user.Current()
@@ -65,5 +85,17 @@ func message() {
 	} else {
 		username = currentUser.Username
 	}
-	fmt.Printf("Welcome %s! to the beginning of the language universe 🪐✨\n\n", username)
+	fmt.Printf("🪐 Welcome %s! to the beginning of the 'LANGUAGE UNIVERSE' 🪐✨\n\n", username)
+	fmt.Printf("To disappear from this universe, type ':q' or ':quit' 🚀\n\n")
+}
+
+func clearTerminal() {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", "cls")
+	} else {
+		cmd = exec.Command("clear")
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Run()
 }
