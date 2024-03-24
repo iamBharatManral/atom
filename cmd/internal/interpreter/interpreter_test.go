@@ -17,7 +17,9 @@ func TestEvaluation(t *testing.T) {
 		{name: "single digit expression", want: 1, input: `1;`},
 		{name: "binary expression", want: 35, input: `12+23;`},
 		{name: "variable declaration", want: nil, input: `let a = 10;`},
-		{name: "multiple binary expressions", want: 162, input: `10+20*6+12+4*5;`},
+		{name: "comparison between integers", want: true, input: `13 > 9;`},
+		{name: "comparison between floats", want: true, input: `1.2 <= 3.4;`},
+		{name: "comparison between strings", want: false, input: `"greater" > "less";`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -277,6 +276,58 @@ func TestLiteralsAndExpressions(t *testing.T) {
 				},
 			},
 		}, input: `51 + 23 * 4;`},
+		{name: "less than comparison between 2 numbers", want: []ast.Statement{
+			ast.BinaryExpression{
+				Left: ast.Literal{
+					Node: ast.Node{
+						Type:  "Literal",
+						Start: 0,
+						End:   1,
+					},
+					Value: 12,
+				},
+				Right: ast.Literal{
+					Node: ast.Node{
+						Type:  "Literal",
+						Start: 5,
+						End:   6,
+					},
+					Value: 13,
+				},
+				Operator: "<",
+				Node: ast.Node{
+					Start: 0,
+					End:   6,
+					Type:  "BinaryExpression",
+				},
+			},
+		}, input: "12 < 13;"},
+		{name: "greater than equal to between 2 strings", want: []ast.Statement{
+			ast.BinaryExpression{
+				Left: ast.Literal{
+					Node: ast.Node{
+						Type:  "Literal",
+						Start: 0,
+						End:   6,
+					},
+					Value: "hello",
+				},
+				Right: ast.Literal{
+					Node: ast.Node{
+						Type:  "Literal",
+						Start: 11,
+						End:   15,
+					},
+					Value: "bye",
+				},
+				Operator: ">=",
+				Node: ast.Node{
+					Start: 0,
+					End:   15,
+					Type:  "BinaryExpression",
+				},
+			},
+		}, input: "\"hello\" >= \"bye\";"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -288,7 +339,6 @@ func TestLiteralsAndExpressions(t *testing.T) {
 			}
 			result := parser.Parse()
 			for i := range result.Body {
-				fmt.Println(result.Body[i])
 				if !reflect.DeepEqual(result.Body[i], tt.want[i]) {
 					t.Errorf("got %+v, want %+v", result.Body[i], tt.want[i])
 				}

@@ -48,6 +48,28 @@ type AssignmentStatement struct {
 	Node
 }
 
+type Consequent struct {
+	Body []Statement
+	Node
+}
+
+type Alternate struct {
+	Body []Statement
+	Node
+}
+type IfElseEBlock struct {
+	Consequent
+	Alternate
+	Test any
+	Node
+}
+
+type IfBlock struct {
+	Node
+	Consequent
+	Test any
+}
+
 type Program struct {
 	Body []Statement
 	Node

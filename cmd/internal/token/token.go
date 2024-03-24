@@ -13,6 +13,14 @@ const (
 	INTEGER = "INTEGER"
 	FLOAT   = "FLOAT"
 
+	LE  = "LE"
+	EQ  = "EQ"
+	GT  = "GT"
+	GE  = "GE"
+	LT  = "LT"
+	NE  = "NE"
+	NOT = "NOT"
+
 	IDENTIFIER = "IDENTIFIER"
 	ASSIGN     = "ASSIGN"
 )
@@ -26,6 +34,12 @@ func RegisterPriorities() {
 	priorities["MINUS"] = 1
 	priorities["STAR"] = 2
 	priorities["SLASH"] = 2
+	priorities["LE"] = 3
+	priorities["NE"] = 3
+	priorities["LT"] = 3
+	priorities["GT"] = 3
+	priorities["GE"] = 3
+	priorities["NOT"] = 4
 }
 
 func GetPriority(token string) int {
@@ -37,6 +51,9 @@ func GetPriority(token string) int {
 }
 func RegisterKeyWords() {
 	keywords["let"] = "let"
+	keywords["if"] = "if"
+	keywords["do"] = "do"
+	keywords["else"] = "else"
 }
 
 func IsKeyword(key string) bool {

@@ -45,6 +45,10 @@ func (l *Lexer) NextToken() token.Token {
 	case '/':
 		return token.New(token.SLASH, "/", "", l.currentPos, l.currentPos)
 	case '=':
+		if l.peek() == '=' {
+			l.readChar()
+			return token.New(token.EQ, "==", "", l.currentPos-1, l.currentPos)
+		}
 		return token.New(token.ASSIGN, "=", "", l.currentPos, l.currentPos)
 	case '"':
 		{
@@ -57,6 +61,25 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	case ';':
 		return token.New(token.SEMICOLON, ";", "", l.currentPos, l.currentPos)
+	case '<':
+		if l.peek() == '=' {
+			l.readChar()
+			return token.New(token.LE, "<=", "", l.currentPos-1, l.currentPos)
+		}
+		return token.New(token.LT, "<", "", l.currentPos, l.currentPos)
+	case '>':
+		if l.peek() == '=' {
+			l.readChar()
+			return token.New(token.GE, ">=", "", l.currentPos-1, l.currentPos)
+		}
+		return token.New(token.GT, ">", "", l.currentPos, l.currentPos)
+	case '!':
+		if l.peek() == '=' {
+			l.readChar()
+			return token.New(token.NE, "!=", "", l.currentPos-1, l.currentPos)
+		}
+		return token.New(token.NOT, "!", "", l.currentPos, l.currentPos)
+
 	default:
 		{
 			if unicode.IsDigit(l.currentChar) {

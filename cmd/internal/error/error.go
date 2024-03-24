@@ -51,6 +51,6 @@ func SyntaxError(message string) result.Result {
 func UndefinedError(symbol string) result.Result {
 	return result.Result{
 		Type:  "error",
-		Value: fmt.Sprintf("error: undefined symbol %s", symbol),
+		Value: fmt.Sprintf("error: undefined symbol '%s'", symbol),
 	}
 }

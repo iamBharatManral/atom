@@ -94,6 +94,13 @@ func TestTokens(t *testing.T) {
 			token.New(token.EOF, "", "", 13, 13),
 		}, input: `3 * 5;
 5 + 9;`},
+		{name: "conditional expression", want: []token.Token{
+			token.New(token.INTEGER, "", 3, 0, 0),
+			token.New(token.LE, "<=", "", 2, 3),
+			token.New(token.INTEGER, "", 5, 5, 5),
+			token.New(token.SEMICOLON, ";", "", 6, 6),
+			token.New(token.EOF, "", "", 7, 7),
+		}, input: `3 <= 5;`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

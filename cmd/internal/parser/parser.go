@@ -46,7 +46,7 @@ func (p *Parser) Parse() ast.Program {
 
 func (p *Parser) parseSingleStatement() ast.Statement {
 	switch p.peekToken.TokenType() {
-	case token.PLUS, token.MINUS, token.STAR, token.SLASH, token.SEMICOLON:
+	case token.PLUS, token.MINUS, token.STAR, token.SLASH, token.SEMICOLON, token.EQ, token.NE, token.GT, token.LT, token.GE, token.LE:
 		return p.parseExpression()
 	default:
 		return p.parseStatement()
@@ -55,9 +55,9 @@ func (p *Parser) parseSingleStatement() ast.Statement {
 
 func (p *Parser) parseExpression() ast.Statement {
 	switch p.peekToken.TokenType() {
-	case token.PLUS, token.MINUS, token.STAR, token.SLASH:
+	case token.PLUS, token.MINUS, token.STAR, token.SLASH, token.EQ, token.NE, token.GT, token.LT, token.GE, token.LE:
 		return p.parseBinaryExpression()
-	case token.SEMICOLON:
+	case token.SEMICOLON, token.NOT:
 		return p.parseUnaryExpression()
 	default:
 		p.addError(fmt.Sprintf("error: wrong token in right side of the expression at line: %d, column: %d", p.lexer.Line(), p.peekToken.Start()+1))
@@ -93,6 +93,9 @@ func (p *Parser) parseStatement() ast.Statement {
 	return p.parseIdentifier()
 }
 
+func (p *Parser) parseIfExpression() ast.Statement {
+	return ast.AssignmentStatement{}
+}
 func (p *Parser) parseIdentifier() ast.Statement {
 	i := ast.Identifier{
 		Node: ast.Node{
