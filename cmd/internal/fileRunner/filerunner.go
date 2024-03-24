@@ -26,7 +26,7 @@ func Execute(filename string) {
 	lexer := lexer.New([]rune(string(input)))
 	parser := parser.New(lexer)
 	program := parser.Parse()
-	env := env.New()
+	env := env.New(nil)
 	result := interpreter.Eval(program, env)
 	if result.Type == "error" {
 		log.Fatal(result.Value)

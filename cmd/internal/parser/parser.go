@@ -48,9 +48,48 @@ func (p *Parser) parseSingleStatement() ast.Statement {
 	switch p.peekToken.TokenType() {
 	case token.PLUS, token.MINUS, token.STAR, token.SLASH, token.SEMICOLON, token.EQ, token.NE, token.GT, token.LT, token.GE, token.LE:
 		return p.parseExpression()
+	case token.LPAREN:
+		return p.parseFunctionEvaluation()
 	default:
 		return p.parseStatement()
 	}
+}
+func (p *Parser) parseFunctionEvaluation() ast.Statement {
+	// hello(a, b);
+	name := p.parseIdentifier().(ast.Identifier)
+	p.nextToken()
+	var params []ast.Statement
+	for p.currentToken.TokenType() != token.RPAREN {
+		if p.currentToken.TokenType() != token.COMMA {
+			switch p.currentToken.TokenType() {
+			case token.IDENTIFIER:
+				params = append(params, p.parseIdentifier())
+				continue
+			case token.INTEGER, token.FLOAT, token.STRING:
+				params = append(params, ast.Literal{
+					Node: ast.Node{
+						Start: p.currentToken.Start(),
+						End:   p.currentToken.End(),
+						Type:  "Literal",
+					},
+					Value: p.currentToken.Value(),
+				})
+				p.nextToken()
+				continue
+			}
+		}
+		p.nextToken()
+	}
+	return ast.FunctionEvaluation{
+		Node: ast.Node{
+			Start: name.Start,
+			End:   p.currentToken.End(),
+			Type:  "FunctionEvaluation",
+		},
+		Parameters: params,
+		Name:       name,
+	}
+
 }
 
 func (p *Parser) parseExpression() ast.Statement {
@@ -89,6 +128,9 @@ func (p *Parser) parseStatement() ast.Statement {
 	}
 	if token.GetKeyword(p.currentToken.Lexeme()) == "if" {
 		return p.parseIfExpression()
+	}
+	if token.GetKeyword(p.currentToken.Lexeme()) == "fn" {
+		return p.parseFunctionExpression()
 	}
 	if p.peekToken.TokenType() == token.ASSIGN {
 		return p.parseAssignment()
@@ -157,6 +199,43 @@ func (p *Parser) parseIfExpression() ast.Statement {
 	}
 
 }
+
+func (p *Parser) parseFunctionExpression() ast.Statement {
+	// fn hello |a, b| -> a; end;
+	start := p.currentToken.Start()
+	p.nextToken()
+	name := p.parseIdentifier().(ast.Identifier)
+	var parameters []ast.Identifier
+	p.nextToken()
+	for p.currentToken.TokenType() != token.BAR {
+		if p.currentToken.TokenType() == token.IDENTIFIER {
+			parameters = append(parameters, p.parseIdentifier().(ast.Identifier))
+		} else {
+
+			p.nextToken()
+		}
+	}
+	p.nextToken()
+	p.nextToken()
+	var body []ast.Statement
+	for p.currentToken.Lexeme() != "end" {
+		body = append(body, p.parseSingleStatement())
+		p.nextToken()
+	}
+	end := p.currentToken.End()
+	p.nextToken()
+	return ast.FunctionExpression{
+		Node: ast.Node{
+			Start: start,
+			End:   end,
+			Type:  "FunctionExpression",
+		},
+		Body:       body,
+		Parameters: parameters,
+		Name:       name,
+	}
+}
+
 func (p *Parser) parseIdentifier() ast.Statement {
 	i := ast.Identifier{
 		Node: ast.Node{

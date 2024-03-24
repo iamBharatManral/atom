@@ -135,6 +135,31 @@ func TestTokens(t *testing.T) {
 			token.New(token.SEMICOLON, ";", "", 31, 31),
 			token.New(token.EOF, "", "", 32, 32),
 		}, input: `if true do "true"; else "false";`},
+		{name: "function declaration", want: []token.Token{
+			token.New(token.IDENTIFIER, "fn", "", 0, 1),
+			token.New(token.IDENTIFIER, "hello", "", 3, 7),
+			token.New(token.BAR, "|", "", 9, 9),
+			token.New(token.IDENTIFIER, "a", "", 10, 10),
+			token.New(token.COMMA, ",", "", 11, 11),
+			token.New(token.IDENTIFIER, "b", "", 13, 13),
+			token.New(token.BAR, "|", "", 14, 14),
+			token.New(token.ARROW, "->", "", 16, 17),
+			token.New(token.IDENTIFIER, "a", "", 19, 19),
+			token.New(token.SEMICOLON, ";", "", 20, 20),
+			token.New(token.IDENTIFIER, "end", "", 22, 24),
+			token.New(token.SEMICOLON, ";", "", 25, 25),
+			token.New(token.EOF, "", "", 26, 26),
+		}, input: `fn hello |a, b| -> a; end;`},
+		{name: "function evaluation", want: []token.Token{
+			token.New(token.IDENTIFIER, "hello", "", 0, 4),
+			token.New(token.LPAREN, "(", "", 5, 5),
+			token.New(token.IDENTIFIER, "a", "", 6, 6),
+			token.New(token.COMMA, ",", "", 7, 7),
+			token.New(token.IDENTIFIER, "b", "", 9, 9),
+			token.New(token.RPAREN, ")", "", 10, 10),
+			token.New(token.SEMICOLON, ";", "", 11, 11),
+			token.New(token.EOF, "", "", 12, 12),
+		}, input: `hello(a, b);`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

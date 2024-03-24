@@ -22,7 +22,7 @@ var inputCh = make(chan string)
 func Start() {
 	util.Banner()
 	message()
-	env := env.New()
+	env := env.New(nil)
 	for {
 		input := userInput()
 		if input == "" {
@@ -42,7 +42,7 @@ func Start() {
 			if result.Type == "error" {
 				fmt.Println(result.Value)
 				continue
-			} else if result.Type == "" {
+			} else if result.Type == "" || result.Value == "()" {
 				fmt.Println()
 				continue
 			}

@@ -61,6 +61,19 @@ type IfBlock struct {
 	Test       any
 }
 
+type FunctionExpression struct {
+	Body []Statement
+	Node
+	Name       Identifier
+	Parameters []Identifier
+}
+
+type FunctionEvaluation struct {
+	Node
+	Parameters []Statement
+	Name       Identifier
+}
+
 type Program struct {
 	Body []Statement
 	Node

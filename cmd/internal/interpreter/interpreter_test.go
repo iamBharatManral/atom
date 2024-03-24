@@ -26,13 +26,14 @@ func TestEvaluation(t *testing.T) {
 		{name: "if else block with falsy condition", want: "false", input: `if 10 != 10 do "true"; else "false";`},
 		{name: "if else block with true keyword", want: "true", input: `if true do "true";`},
 		{name: "if else block with false keyword", want: "false", input: `if false do "true"; else "false";`},
+		{name: "function declaration", want: "()", input: `fn hello|a,b| -> a; end;`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			lexer := lexer.New([]rune(tt.input))
 			parser := parser.New(lexer)
 			program := parser.Parse()
-			env := env.New()
+			env := env.New(nil)
 			for i := range program.Body {
 				output := Eval(program.Body[i], env)
 				if output.Value != tt.want {

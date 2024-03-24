@@ -28,9 +28,51 @@ func Eval(node ast.AstNode, env *env.Environment) result.Result {
 		return evalIfExpression(node, env)
 	case ast.IfElseBlock:
 		return evalIfElseExpression(node, env)
+	case ast.FunctionExpression:
+		return evalFunctionExpression(node, env)
+	case ast.FunctionEvaluation:
+		return evalFunction(node, env)
 	default:
 		return error.UnsupportedTokensError()
 	}
+}
+
+func evalFunction(node ast.FunctionEvaluation, ev *env.Environment) result.Result {
+	localEnv := env.New(ev)
+	fnName := node.Name.Value
+	var funcDecl ast.FunctionExpression
+	if fn, ok := ev.Get(fnName); !ok {
+		return error.UndefinedError(fnName)
+	} else {
+		funcDecl = fn.Value.(ast.FunctionExpression)
+	}
+	if fnName != node.Name.Value {
+		return error.UndefinedError(node.Name.Value)
+	}
+	for i, stmt := range node.Parameters {
+		switch stmt := stmt.(type) {
+		case ast.Identifier:
+			result := evalIdentifier(stmt, ev)
+			if result.Type == "error" {
+				return error.UndefinedError(stmt.Value)
+			}
+			localEnv.Set(stmt.Value, createResult("identifier", result.Value))
+		case ast.Literal:
+			localEnv.Set(funcDecl.Parameters[i].Value, createResult("identifier", stmt.Value))
+		}
+	}
+
+	var results []result.Result
+	for _, stmt := range funcDecl.Body {
+		results = append(results, Eval(stmt, localEnv))
+	}
+	return results[len(results)-1]
+}
+
+func evalFunctionExpression(stmt ast.FunctionExpression, env *env.Environment) result.Result {
+	name := stmt.Name.Value
+	env.Set(name, createResult("fn", stmt))
+	return createResult("function declaration", "()")
 }
 
 func evalAssignment(stmt ast.AssignmentStatement, env *env.Environment) result.Result {

@@ -21,6 +21,12 @@ const (
 	NE  = "NE"
 	NOT = "NOT"
 
+	ARROW  = "ARROW"
+	BAR    = "BAR"
+	COMMA  = "COMMA"
+	LPAREN = "LPAREN"
+	RPAREN = "RPAREN"
+
 	IDENTIFIER = "IDENTIFIER"
 	ASSIGN     = "ASSIGN"
 )
@@ -57,6 +63,7 @@ func RegisterKeyWords() {
 	keywords["false"] = "false"
 	keywords["true"] = "true"
 	keywords["nil"] = "nil"
+	keywords["fn"] = "fn"
 }
 
 func IsKeyword(key string) bool {

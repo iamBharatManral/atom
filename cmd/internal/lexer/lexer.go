@@ -39,6 +39,10 @@ func (l *Lexer) NextToken() token.Token {
 	case '+':
 		return token.New(token.PLUS, "+", "", l.currentPos, l.currentPos)
 	case '-':
+		if l.peek() == '>' {
+			l.readChar()
+			return token.New(token.ARROW, "->", "", l.currentPos-1, l.currentPos)
+		}
 		return token.New(token.MINUS, "-", "", l.currentPos, l.currentPos)
 	case '*':
 		return token.New(token.STAR, "*", "", l.currentPos, l.currentPos)
@@ -79,6 +83,15 @@ func (l *Lexer) NextToken() token.Token {
 			return token.New(token.NE, "!=", "", l.currentPos-1, l.currentPos)
 		}
 		return token.New(token.NOT, "!", "", l.currentPos, l.currentPos)
+
+	case '|':
+		return token.New(token.BAR, "|", "", l.currentPos, l.currentPos)
+	case ',':
+		return token.New(token.COMMA, ",", "", l.currentPos, l.currentPos)
+	case '(':
+		return token.New(token.LPAREN, "(", "", l.currentPos, l.currentPos)
+	case ')':
+		return token.New(token.RPAREN, ")", "", l.currentPos, l.currentPos)
 
 	default:
 		{

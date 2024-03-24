@@ -451,6 +451,87 @@ func TestLiteralsAndExpressions(t *testing.T) {
 				},
 			},
 		}, input: `if true do 1; else 2;`},
+		{name: "function declaration", want: []ast.Statement{
+			ast.FunctionExpression{
+				Body: []ast.Statement{
+					ast.Identifier{
+						Node: ast.Node{
+							Start: 19,
+							End:   19,
+							Type:  "Identifier",
+						},
+						Value: "a",
+					},
+				},
+				Node: ast.Node{
+					Start: 0,
+					End:   24,
+					Type:  "FunctionExpression",
+				},
+				Name: ast.Identifier{
+					Node: ast.Node{
+						Start: 3,
+						End:   7,
+						Type:  "Identifier",
+					},
+					Value: "hello",
+				},
+
+				Parameters: []ast.Identifier{
+					{
+						Node: ast.Node{
+							Start: 10,
+							End:   10,
+							Type:  "Identifier",
+						},
+						Value: "a",
+					},
+					{
+						Node: ast.Node{
+							Start: 13,
+							End:   13,
+							Type:  "Identifier",
+						},
+						Value: "b",
+					},
+				},
+			},
+		}, input: `fn hello |a, b| -> a; end;`},
+		{name: "function evaluation", want: []ast.Statement{
+			ast.FunctionEvaluation{
+				Node: ast.Node{
+					Start: 0,
+					End:   10,
+					Type:  "FunctionEvaluation",
+				},
+				Name: ast.Identifier{
+					Node: ast.Node{
+						Start: 0,
+						End:   4,
+						Type:  "Identifier",
+					},
+					Value: "hello",
+				},
+				Parameters: []ast.Statement{
+					ast.Identifier{
+						Node: ast.Node{
+							Start: 6,
+							End:   6,
+							Type:  "Identifier",
+						},
+						Value: "a",
+					},
+					ast.Identifier{
+						Node: ast.Node{
+							Start: 9,
+							End:   9,
+							Type:  "Identifier",
+						},
+						Value: "b",
+					},
+				},
+			}},
+			input: `hello(a, b);`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
