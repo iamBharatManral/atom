@@ -328,6 +328,129 @@ func TestLiteralsAndExpressions(t *testing.T) {
 				},
 			},
 		}, input: "\"hello\" >= \"bye\";"},
+		{name: "if block", want: []ast.Statement{
+			ast.IfBlock{
+				Test: ast.BinaryExpression{
+					Left: ast.Literal{
+						Node: ast.Node{
+							Type:  "Literal",
+							Start: 3,
+							End:   4,
+						},
+						Value: 38,
+					},
+					Right: ast.Literal{
+						Node: ast.Node{
+							Type:  "Literal",
+							Start: 9,
+							End:   11,
+						},
+						Value: 121,
+					},
+					Operator: "<=",
+					Node: ast.Node{
+						Start: 3,
+						End:   11,
+						Type:  "BinaryExpression",
+					},
+				},
+				Consequent: ast.Literal{
+					Node: ast.Node{
+						Start: 16,
+						End:   16,
+						Type:  "Literal",
+					},
+					Value: 1,
+				},
+				Node: ast.Node{
+					Start: 0,
+					End:   16,
+					Type:  "IfExpression",
+				},
+			},
+		}, input: `if 38 <= 121 do 1;`},
+		{name: "if else block", want: []ast.Statement{
+			ast.IfElseBlock{
+				Test: ast.BinaryExpression{
+					Left: ast.Literal{
+						Node: ast.Node{
+							Type:  "Literal",
+							Start: 3,
+							End:   4,
+						},
+						Value: 38,
+					},
+					Right: ast.Literal{
+						Node: ast.Node{
+							Type:  "Literal",
+							Start: 9,
+							End:   11,
+						},
+						Value: 121,
+					},
+					Operator: "<=",
+					Node: ast.Node{
+						Start: 3,
+						End:   11,
+						Type:  "BinaryExpression",
+					},
+				},
+				Consequent: ast.Literal{
+					Node: ast.Node{
+						Start: 16,
+						End:   16,
+						Type:  "Literal",
+					},
+					Value: 1,
+				},
+				Alternate: ast.Literal{
+					Node: ast.Node{
+						Start: 24,
+						End:   24,
+						Type:  "Literal",
+					},
+					Value: 2,
+				},
+				Node: ast.Node{
+					Start: 0,
+					End:   24,
+					Type:  "IfElseExpression",
+				},
+			},
+		}, input: `if 38 <= 121 do 1; else 2;`},
+		{name: "if else block with true keyword", want: []ast.Statement{
+			ast.IfElseBlock{
+				Test: ast.Identifier{
+					Node: ast.Node{
+						Start: 3,
+						End:   6,
+						Type:  "Identifier",
+					},
+					Value: "true",
+				},
+				Consequent: ast.Literal{
+					Node: ast.Node{
+						Start: 11,
+						End:   11,
+						Type:  "Literal",
+					},
+					Value: 1,
+				},
+				Alternate: ast.Literal{
+					Node: ast.Node{
+						Start: 19,
+						End:   19,
+						Type:  "Literal",
+					},
+					Value: 2,
+				},
+				Node: ast.Node{
+					Start: 0,
+					End:   19,
+					Type:  "IfElseExpression",
+				},
+			},
+		}, input: `if true do 1; else 2;`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -87,6 +87,9 @@ func (p *Parser) parseStatement() ast.Statement {
 	if token.GetKeyword(p.currentToken.Lexeme()) == "let" {
 		return p.parseLetDeclaration()
 	}
+	if token.GetKeyword(p.currentToken.Lexeme()) == "if" {
+		return p.parseIfExpression()
+	}
 	if p.peekToken.TokenType() == token.ASSIGN {
 		return p.parseAssignment()
 	}
@@ -94,7 +97,65 @@ func (p *Parser) parseStatement() ast.Statement {
 }
 
 func (p *Parser) parseIfExpression() ast.Statement {
-	return ast.AssignmentStatement{}
+	// if 10 < 20 do a; else b;
+	start := p.currentToken.Start()
+	var test any
+	p.nextToken()
+	nextTokenType := p.peekToken.TokenType()
+	switch nextTokenType {
+	case token.LE, token.LT, token.GT, token.GE, token.NE, token.EQ:
+		test = p.parseBinaryExpression()
+	case token.IDENTIFIER:
+		value := p.currentToken.Lexeme()
+		if value == "true" || value == "false" {
+			test = ast.Identifier{
+				Node: ast.Node{
+					Start: p.currentToken.Start(),
+					End:   p.currentToken.End(),
+					Type:  "Identifier",
+				},
+				Value: p.currentToken.Lexeme(),
+			}
+			p.nextToken()
+
+		} else {
+			p.addError("error: wrong conditional type, allowed types are 'true' or 'false' keyword or any conditional expression")
+			return nil
+		}
+
+	}
+	if keyword := token.GetKeyword(p.currentToken.Lexeme()); keyword != "do" {
+		p.addError("error: missing 'do' symbol")
+		return nil
+	}
+	p.nextToken()
+	consequent := p.parseSingleStatement()
+	end := p.currentToken.Start() - 1
+	p.nextToken()
+	if keyword := token.GetKeyword(p.currentToken.Lexeme()); keyword != "else" {
+		return ast.IfBlock{
+			Node: ast.Node{
+				Start: start,
+				End:   end,
+				Type:  "IfExpression",
+			},
+			Consequent: consequent,
+			Test:       test,
+		}
+	}
+	p.nextToken()
+	alternate := p.parseSingleStatement()
+	return ast.IfElseBlock{
+		Consequent: consequent,
+		Alternate:  alternate,
+		Node: ast.Node{
+			Start: start,
+			End:   p.currentToken.Start() - 1,
+			Type:  "IfElseExpression",
+		},
+		Test: test,
+	}
+
 }
 func (p *Parser) parseIdentifier() ast.Statement {
 	i := ast.Identifier{
@@ -142,8 +203,8 @@ func (p *Parser) parseRHS(kind string, left ast.Identifier, start int) ast.State
 	operator := p.currentToken.Lexeme()
 	var rightSide any
 	nextTokenOperator := p.lexer.PeekToken(1)
-	nextTokenOpeatorType := nextTokenOperator.TokenType()
-	if nextTokenOpeatorType == token.PLUS || nextTokenOpeatorType == token.MINUS || nextTokenOpeatorType == token.STAR || nextTokenOpeatorType == token.SLASH {
+	nextTokenType := nextTokenOperator.TokenType()
+	if nextTokenType == token.PLUS || nextTokenType == token.MINUS || nextTokenType == token.STAR || nextTokenType == token.SLASH || nextTokenType == token.EQ || nextTokenType == token.NE || nextTokenType == token.GE || nextTokenType == token.GT || nextTokenType == token.LE || nextTokenType == token.LT {
 		p.nextToken()
 		rightSide = p.parseBinaryExpression()
 		return ast.LetStatement{
@@ -246,7 +307,7 @@ func (p *Parser) parseBinaryExpression() ast.Statement {
 	}
 	firstOperatorToken := p.currentToken
 	secondOperatorToken := p.lexer.PeekToken(1)
-	if secondOperatorToken.TokenType() != token.SEMICOLON {
+	if secondOperatorToken.TokenType() != token.SEMICOLON && secondOperatorToken.TokenType() != token.IDENTIFIER {
 		if token.GetPriority(secondOperatorToken.TokenType()) > token.GetPriority(firstOperatorToken.TokenType()) {
 			p.nextToken()
 			rightSide := p.parseBinaryExpression()

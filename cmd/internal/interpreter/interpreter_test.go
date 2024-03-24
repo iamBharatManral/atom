@@ -18,8 +18,14 @@ func TestEvaluation(t *testing.T) {
 		{name: "binary expression", want: 35, input: `12+23;`},
 		{name: "variable declaration", want: nil, input: `let a = 10;`},
 		{name: "comparison between integers", want: true, input: `13 > 9;`},
+		{name: "equality check", want: true, input: `"hello" == "hello";`},
 		{name: "comparison between floats", want: true, input: `1.2 <= 3.4;`},
 		{name: "comparison between strings", want: false, input: `"greater" > "less";`},
+		{name: "if block", want: "greater", input: `if 12 > 10 do "greater";`},
+		{name: "if else block with truthy condition", want: "greater than", input: `if 12 > 10 do "greater than"; else "less than";`},
+		{name: "if else block with falsy condition", want: "false", input: `if 10 != 10 do "true"; else "false";`},
+		{name: "if else block with true keyword", want: "true", input: `if true do "true";`},
+		{name: "if else block with false keyword", want: "false", input: `if false do "true"; else "false";`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

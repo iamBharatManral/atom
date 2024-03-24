@@ -54,6 +54,9 @@ func RegisterKeyWords() {
 	keywords["if"] = "if"
 	keywords["do"] = "do"
 	keywords["else"] = "else"
+	keywords["false"] = "false"
+	keywords["true"] = "true"
+	keywords["nil"] = "nil"
 }
 
 func IsKeyword(key string) bool {

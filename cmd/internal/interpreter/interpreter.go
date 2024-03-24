@@ -7,6 +7,7 @@ import (
 	"github.com/iamBharatManral/atom.git/cmd/internal/env"
 	"github.com/iamBharatManral/atom.git/cmd/internal/error"
 	"github.com/iamBharatManral/atom.git/cmd/internal/result"
+	"github.com/iamBharatManral/atom.git/cmd/internal/token"
 )
 
 func Eval(node ast.AstNode, env *env.Environment) result.Result {
@@ -23,6 +24,10 @@ func Eval(node ast.AstNode, env *env.Environment) result.Result {
 		return evalIdentifier(node, env)
 	case ast.AssignmentStatement:
 		return evalAssignment(node, env)
+	case ast.IfBlock:
+		return evalIfExpression(node, env)
+	case ast.IfElseBlock:
+		return evalIfElseExpression(node, env)
 	default:
 		return error.UnsupportedTokensError()
 	}
@@ -85,6 +90,9 @@ func evalLetStatement(stmt ast.LetStatement, env *env.Environment) result.Result
 
 func evalIdentifier(stmt ast.Identifier, env *env.Environment) result.Result {
 	id := stmt.Value
+	if keyword := token.GetKeyword(id); keyword == "true" || keyword == "false" {
+		return createResult("boolean", keyword)
+	}
 	if result, ok := env.Get(id); ok {
 		return createResult("identifier", result.Value)
 	}
@@ -95,6 +103,42 @@ func evalLiteral(stmt ast.Literal) result.Result {
 		Type:  typeAsString(stmt.Value),
 		Value: stmt.Value,
 	}
+}
+
+func evalIfExpression(stmt ast.IfBlock, env *env.Environment) result.Result {
+	test := stmt.Test
+	var testResult result.Result
+	switch test := test.(type) {
+	case ast.BinaryExpression:
+		testResult = evalBinaryExpression(test, env)
+	case ast.Identifier:
+		testResult = evalIdentifier(test, env)
+	}
+	if testResult.Value == "true" || testResult.Value == true {
+		finalResult := Eval(stmt.Consequent, env)
+		return createResult("conditional", finalResult.Value)
+	}
+	return result.Result{}
+
+}
+
+func evalIfElseExpression(stmt ast.IfElseBlock, env *env.Environment) result.Result {
+	test := stmt.Test
+	var testResult result.Result
+	switch test := test.(type) {
+	case ast.BinaryExpression:
+		testResult = evalBinaryExpression(test, env)
+	case ast.Identifier:
+		testResult = evalIdentifier(test, env)
+	}
+	if testResult.Value == "true" || testResult.Value == true {
+		finalResult := Eval(stmt.Consequent, env)
+		return createResult("conditional", finalResult.Value)
+	} else {
+		finalResult := Eval(stmt.Alternate, env)
+		return createResult("conditional", finalResult.Value)
+	}
+
 }
 
 func typeAsString(v any) string {

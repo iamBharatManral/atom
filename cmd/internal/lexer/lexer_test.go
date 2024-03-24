@@ -94,13 +94,47 @@ func TestTokens(t *testing.T) {
 			token.New(token.EOF, "", "", 13, 13),
 		}, input: `3 * 5;
 5 + 9;`},
-		{name: "conditional expression", want: []token.Token{
+		{name: "conditional operator", want: []token.Token{
 			token.New(token.INTEGER, "", 3, 0, 0),
 			token.New(token.LE, "<=", "", 2, 3),
 			token.New(token.INTEGER, "", 5, 5, 5),
 			token.New(token.SEMICOLON, ";", "", 6, 6),
 			token.New(token.EOF, "", "", 7, 7),
 		}, input: `3 <= 5;`},
+		{name: "if condition", want: []token.Token{
+			token.New(token.IDENTIFIER, "if", "", 0, 1),
+			token.New(token.INTEGER, "", 10, 3, 4),
+			token.New(token.LT, "<", "", 6, 6),
+			token.New(token.INTEGER, "", 12, 8, 9),
+			token.New(token.IDENTIFIER, "do", "", 11, 12),
+			token.New(token.STRING, "\"true\"", "true", 14, 19),
+			token.New(token.SEMICOLON, ";", "", 20, 20),
+			token.New(token.EOF, "", "", 21, 21),
+		}, input: `if 10 < 12 do "true";`},
+		{name: "if else condition", want: []token.Token{
+			token.New(token.IDENTIFIER, "if", "", 0, 1),
+			token.New(token.INTEGER, "", 10, 3, 4),
+			token.New(token.LT, "<", "", 6, 6),
+			token.New(token.INTEGER, "", 12, 8, 9),
+			token.New(token.IDENTIFIER, "do", "", 11, 12),
+			token.New(token.STRING, "\"true\"", "true", 14, 19),
+			token.New(token.SEMICOLON, ";", "", 20, 20),
+			token.New(token.IDENTIFIER, "else", "", 22, 25),
+			token.New(token.STRING, "\"false\"", "false", 27, 33),
+			token.New(token.SEMICOLON, ";", "", 34, 34),
+			token.New(token.EOF, "", "", 35, 35),
+		}, input: `if 10 < 12 do "true"; else "false";`},
+		{name: "if else conditon with true keyword", want: []token.Token{
+			token.New(token.IDENTIFIER, "if", "", 0, 1),
+			token.New(token.IDENTIFIER, "true", "", 3, 6),
+			token.New(token.IDENTIFIER, "do", "", 8, 9),
+			token.New(token.STRING, "\"true\"", "true", 11, 16),
+			token.New(token.SEMICOLON, ";", "", 17, 17),
+			token.New(token.IDENTIFIER, "else", "", 19, 22),
+			token.New(token.STRING, "\"false\"", "false", 24, 30),
+			token.New(token.SEMICOLON, ";", "", 31, 31),
+			token.New(token.EOF, "", "", 32, 32),
+		}, input: `if true do "true"; else "false";`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
