@@ -54,3 +54,10 @@ func UndefinedError(symbol string) result.Result {
 		Value: fmt.Sprintf("error: undefined symbol '%s'", symbol),
 	}
 }
+
+func UnsupportedOperation(msg string) result.Result {
+	return result.Result{
+		Type:  "error",
+		Value: fmt.Sprintf("error: %s", msg),
+	}
+}

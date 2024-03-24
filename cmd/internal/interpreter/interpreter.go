@@ -71,6 +71,9 @@ func evalFunction(node ast.FunctionEvaluation, ev *env.Environment) result.Resul
 
 func evalFunctionExpression(stmt ast.FunctionExpression, env *env.Environment) result.Result {
 	name := stmt.Name.Value
+	if _, ok := env.Get(name); ok {
+		return error.UnsupportedOperation(fmt.Sprintf("function with '%s' is already defined", name))
+	}
 	env.Set(name, createResult("fn", stmt))
 	return createResult("function declaration", "()")
 }
@@ -80,7 +83,7 @@ func evalAssignment(stmt ast.AssignmentStatement, env *env.Environment) result.R
 	if _, ok := env.Get(string(id)); !ok {
 		return error.UndefinedError(id)
 	}
-	return evalRHS(ast.LetStatement(stmt), env)
+	return error.UnsupportedOperation("re-assignment is not supported")
 }
 
 func evalRHS(stmt ast.LetStatement, env *env.Environment) result.Result {
@@ -115,7 +118,7 @@ func evalStatements(stmts []ast.Statement, env *env.Environment) result.Result {
 		result := Eval(stmts[i], env)
 		if result.Type == "error" {
 			return result
-		} else if result.Type == "" {
+		} else if result.Type == "" || result.Value == "()" {
 			continue
 		}
 		completeResult += fmt.Sprintf("%v\n", result.Value)
