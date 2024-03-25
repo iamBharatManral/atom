@@ -3,19 +3,22 @@ package repl
 import (
 	"bufio"
 	"fmt"
-	"github.com/iamBharatManral/atom.git/cmd/internal/env"
-	"github.com/iamBharatManral/atom.git/cmd/internal/interpreter"
-	"github.com/iamBharatManral/atom.git/cmd/internal/lexer"
-	"github.com/iamBharatManral/atom.git/cmd/internal/parser"
-	"github.com/iamBharatManral/atom.git/cmd/internal/util"
 	"log"
 	"os"
 	"os/exec"
 	"os/user"
 	"runtime"
+	"strings"
+
+	"github.com/iamBharatManral/atom.git/cmd/internal/env"
+	"github.com/iamBharatManral/atom.git/cmd/internal/interpreter"
+	"github.com/iamBharatManral/atom.git/cmd/internal/lexer"
+	"github.com/iamBharatManral/atom.git/cmd/internal/parser"
+	"github.com/iamBharatManral/atom.git/cmd/internal/util"
 )
 
-const PROMPT = "λ> "
+const MAIN_PROMPT = "λ> "
+const REST_OF_LINE_PROMPT = "... "
 
 var inputCh = make(chan string)
 
@@ -25,10 +28,7 @@ func Start() {
 	env := env.New(nil)
 	for {
 		input := userInput()
-		if input == "" {
-			continue
-		}
-		lexer := lexer.New([]rune(input))
+		lexer := lexer.New(input)
 		parser := parser.New(lexer)
 		program := parser.Parse()
 		if len(parser.Errors) > 0 {
@@ -52,29 +52,52 @@ func Start() {
 	}
 }
 
-func userInput() string {
+func userInput() []rune {
+	endOfStatements := make(map[string]string)
+	endOfStatements["let"] = ";"
+	endOfStatements["fn"] = "end;"
+	var finalInput string
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Print(PROMPT)
-	scanner.Scan()
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+	var endOfStatement string = endOfStatements["let"]
+	var lineContinuation bool
+	for {
+		if !lineContinuation {
+			fmt.Print(MAIN_PROMPT)
+		} else {
+			fmt.Print(REST_OF_LINE_PROMPT)
+		}
+		scanner.Scan()
+		if err := scanner.Err(); err != nil {
+			log.Fatal(err)
+		}
+		input := scanner.Text()
+		finalInput += input
+		if strings.Contains(finalInput, "fn") {
+			endOfStatement = endOfStatements["fn"]
+		} else if strings.Contains(finalInput, "let") {
+			endOfStatement = endOfStatements["let"]
+		} else {
+			endOfStatement = ";"
+		}
+
+		if len(input) == 0 {
+			continue
+		}
+		if input == ":q" || input == ":quit" {
+			os.Exit(0)
+		}
+		if input == "clear" {
+			clearTerminal()
+			continue
+		}
+		if strings.Contains(input, endOfStatement) {
+			break
+		} else {
+			lineContinuation = true
+		}
+
 	}
-	input := scanner.Text()
-	if len(input) == 0 {
-		return ""
-	}
-	if input == ":q" || input == ":quit" {
-		os.Exit(0)
-	}
-	if input == "clear" {
-		clearTerminal()
-		return ""
-	}
-	if input[len(input)-1] != ';' {
-		fmt.Println("error: missing semicolon at the end!")
-		return ""
-	}
-	return input
+	return []rune(finalInput)
 
 }
 func message() {
@@ -98,4 +121,8 @@ func clearTerminal() {
 	}
 	cmd.Stdout = os.Stdout
 	cmd.Run()
+}
+
+func lastChar(input string) string {
+	return string(input[len(input)-1])
 }
