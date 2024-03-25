@@ -615,6 +615,132 @@ func TestLiteralsAndExpressions(t *testing.T) {
 				Parameters: []ast.Identifier{},
 			},
 		}, input: `fn hello || -> a; end;`},
+		{name: "let declaration", want: []ast.Statement{
+			ast.LetStatement{
+				Left: ast.Identifier{
+					Value: "incr",
+					Node: ast.Node{
+						Start: 4,
+						End:   7,
+						Type:  "Identifier",
+					},
+				},
+				Right: ast.FunctionExpression{
+					Body: []ast.Statement{
+						ast.BinaryExpression{
+							Left: ast.Identifier{
+								Node: ast.Node{
+									Start: 21,
+									End:   21,
+									Type:  "Identifier",
+								},
+								Value: "a",
+							},
+							Right: ast.Literal{
+								Value: 1,
+								Node: ast.Node{
+									Start: 25,
+									End:   25,
+									Type:  "Literal",
+								},
+							},
+							Node: ast.Node{
+								Start: 21,
+								End:   25,
+								Type:  "BinaryExpression",
+							},
+							Operator: "+",
+						},
+					},
+					Parameters: []ast.Identifier{
+						{
+							Node: ast.Node{
+								Start: 15,
+								End:   15,
+								Type:  "Identifier",
+							},
+							Value: "a",
+						},
+					},
+					Node: ast.Node{
+						Start: 11,
+						End:   30,
+						Type:  "FunctionExpression",
+					},
+					Name: ast.Identifier{},
+				},
+				Operator: "=",
+				Node: ast.Node{
+					Start: 0,
+					End:   30,
+					Type:  "LetStatement",
+				},
+			},
+		}, input: `let incr = fn |a| -> a + 1; end;`},
+		{name: "let declaration in multiple lines", want: []ast.Statement{
+			ast.LetStatement{
+				Left: ast.Identifier{
+					Value: "incr",
+					Node: ast.Node{
+						Start: 4,
+						End:   7,
+						Type:  "Identifier",
+					},
+				},
+				Right: ast.FunctionExpression{
+					Body: []ast.Statement{
+						ast.BinaryExpression{
+							Left: ast.Identifier{
+								Node: ast.Node{
+									Start: 21,
+									End:   21,
+									Type:  "Identifier",
+								},
+								Value: "a",
+							},
+							Right: ast.Literal{
+								Value: 1,
+								Node: ast.Node{
+									Start: 25,
+									End:   25,
+									Type:  "Literal",
+								},
+							},
+							Node: ast.Node{
+								Start: 21,
+								End:   25,
+								Type:  "BinaryExpression",
+							},
+							Operator: "+",
+						},
+					},
+					Parameters: []ast.Identifier{
+						{
+							Node: ast.Node{
+								Start: 15,
+								End:   15,
+								Type:  "Identifier",
+							},
+							Value: "a",
+						},
+					},
+					Node: ast.Node{
+						Start: 11,
+						End:   30,
+						Type:  "FunctionExpression",
+					},
+					Name: ast.Identifier{},
+				},
+				Operator: "=",
+				Node: ast.Node{
+					Start: 0,
+					End:   30,
+					Type:  "LetStatement",
+				},
+			},
+		}, input: `let incr = fn |a| ->
+a + 1;
+end;`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

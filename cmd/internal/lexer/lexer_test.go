@@ -181,6 +181,25 @@ func TestTokens(t *testing.T) {
 			token.New(token.SEMICOLON, ";", "", 31, 31),
 			token.New(token.EOF, "", "", 32, 32),
 		}, input: `fn hello |a, b| -> a;a+b;b; end;`},
+		{name: "let declaration with fn expression as RHS", want: []token.Token{
+			token.New(token.IDENTIFIER, "let", "", 0, 2),
+			token.New(token.IDENTIFIER, "sum", "", 4, 6),
+			token.New(token.ASSIGN, "=", "", 8, 8),
+			token.New(token.IDENTIFIER, "fn", "", 10, 11),
+			token.New(token.BAR, "|", "", 13, 13),
+			token.New(token.IDENTIFIER, "a", "", 14, 14),
+			token.New(token.COMMA, ",", "", 15, 15),
+			token.New(token.IDENTIFIER, "b", "", 17, 17),
+			token.New(token.BAR, "|", "", 18, 18),
+			token.New(token.ARROW, "->", "", 20, 21),
+			token.New(token.IDENTIFIER, "a", "", 23, 23),
+			token.New(token.PLUS, "+", "", 24, 24),
+			token.New(token.IDENTIFIER, "b", "", 25, 25),
+			token.New(token.SEMICOLON, ";", "", 26, 26),
+			token.New(token.IDENTIFIER, "end", "", 28, 30),
+			token.New(token.SEMICOLON, ";", "", 31, 31),
+			token.New(token.EOF, "", "", 32, 32),
+		}, input: `let sum = fn |a, b| -> a+b; end;`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

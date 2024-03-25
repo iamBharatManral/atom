@@ -29,7 +29,7 @@ func Eval(node ast.AstNode, env *env.Environment) result.Result {
 	case ast.IfElseBlock:
 		return evalIfElseExpression(node, env)
 	case ast.FunctionExpression:
-		return evalFunctionExpression(node, env)
+		return evalFunctionExpression(node, env, "")
 	case ast.FunctionEvaluation:
 		return evalFunction(node, env)
 	default:
@@ -48,6 +48,9 @@ func evalFunction(node ast.FunctionEvaluation, ev *env.Environment) result.Resul
 	}
 	if fnName != node.Name.Value {
 		return error.UndefinedError(node.Name.Value)
+	}
+	if len(node.Parameters) != len(funcDecl.Parameters) {
+		return error.NotEnoughArguments(fmt.Sprintf("not enough arguments. require: %d, got: %d", len(funcDecl.Parameters), len(node.Parameters)))
 	}
 	for i, stmt := range node.Parameters {
 		switch stmt := stmt.(type) {
@@ -69,10 +72,13 @@ func evalFunction(node ast.FunctionEvaluation, ev *env.Environment) result.Resul
 	return results[len(results)-1]
 }
 
-func evalFunctionExpression(stmt ast.FunctionExpression, env *env.Environment) result.Result {
+func evalFunctionExpression(stmt ast.FunctionExpression, env *env.Environment, fnName string) result.Result {
 	name := stmt.Name.Value
+	if name == "" {
+		name = fnName
+	}
 	if _, ok := env.Get(name); ok {
-		return error.UnsupportedOperation(fmt.Sprintf("function with '%s' is already defined", name))
+		return error.UnsupportedOperation(fmt.Sprintf("symbol '%s' is already defined", name))
 	}
 	env.Set(name, createResult("fn", stmt))
 	return createResult("function declaration", "()")
@@ -106,6 +112,8 @@ func evalRHS(stmt ast.LetStatement, env *env.Environment) result.Result {
 			Type:  "BinaryExpression",
 			Value: r.Value,
 		})
+	case ast.FunctionExpression:
+		return evalFunctionExpression(stmt.Right.(ast.FunctionExpression), env, id)
 	default:
 		return error.UnsupportedTokensError()
 	}

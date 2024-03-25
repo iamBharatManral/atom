@@ -80,10 +80,11 @@ func (p *Parser) parseFunctionEvaluation() ast.Statement {
 		}
 		p.nextToken()
 	}
+	p.nextToken()
 	return ast.FunctionEvaluation{
 		Node: ast.Node{
 			Start: name.Start,
-			End:   p.currentToken.End(),
+			End:   p.currentToken.End() - 1,
 			Type:  "FunctionEvaluation",
 		},
 		Parameters: params,
@@ -204,7 +205,12 @@ func (p *Parser) parseFunctionExpression() ast.Statement {
 	// fn hello |a, b| -> a; end;
 	start := p.currentToken.Start()
 	p.nextToken()
-	name := p.parseIdentifier().(ast.Identifier)
+	var name ast.Identifier
+	if p.currentToken.TokenType() != token.IDENTIFIER {
+		name = ast.Identifier{}
+	} else {
+		name = p.parseIdentifier().(ast.Identifier)
+	}
 	var parameters []ast.Identifier
 	p.nextToken()
 	for p.currentToken.TokenType() != token.BAR {
@@ -269,6 +275,20 @@ func (p *Parser) parseAssignment() ast.Statement {
 }
 
 func (p *Parser) parseRHS(kind string, left ast.Identifier, start int) ast.Statement {
+	if p.peekToken.Lexeme() == "fn" {
+		p.nextToken()
+		rightSide := p.parseFunctionExpression()
+		return ast.LetStatement{
+			Left:  left,
+			Right: rightSide,
+			Node: ast.Node{
+				Start: start,
+				End:   rightSide.(ast.FunctionExpression).End,
+				Type:  "LetStatement",
+			},
+			Operator: "=",
+		}
+	}
 	var tp string
 	if kind == "let" {
 		tp = "LetStatement"
