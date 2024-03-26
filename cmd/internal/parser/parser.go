@@ -46,7 +46,7 @@ func (p *Parser) Parse() ast.Program {
 
 func (p *Parser) parseSingleStatement() ast.Statement {
 	switch p.peekToken.TokenType() {
-	case token.PLUS, token.MINUS, token.STAR, token.SLASH, token.SEMICOLON, token.EQ, token.NE, token.GT, token.LT, token.GE, token.LE:
+	case token.PLUS, token.MINUS, token.STAR, token.SLASH, token.SEMICOLON, token.EQ, token.NE, token.GT, token.LT, token.GE, token.LE, token.AND, token.OR:
 		return p.parseExpression()
 	case token.LPAREN:
 		return p.parseFunctionEvaluation()
@@ -95,7 +95,7 @@ func (p *Parser) parseFunctionEvaluation() ast.Statement {
 
 func (p *Parser) parseExpression() ast.Statement {
 	switch p.peekToken.TokenType() {
-	case token.PLUS, token.MINUS, token.STAR, token.SLASH, token.EQ, token.NE, token.GT, token.LT, token.GE, token.LE:
+	case token.PLUS, token.MINUS, token.STAR, token.SLASH, token.EQ, token.NE, token.GT, token.LT, token.GE, token.LE, token.AND, token.OR:
 		return p.parseBinaryExpression()
 	case token.SEMICOLON, token.NOT:
 		return p.parseUnaryExpression()
@@ -149,15 +149,15 @@ func (p *Parser) parseIfExpression() ast.Statement {
 	case token.LE, token.LT, token.GT, token.GE, token.NE, token.EQ:
 		test = p.parseBinaryExpression()
 	case token.IDENTIFIER:
-		value := p.currentToken.Lexeme()
-		if value == "true" || value == "false" {
-			test = ast.Identifier{
+		value := p.currentToken.Value()
+		if value == true || value == false {
+			test = ast.Literal{
 				Node: ast.Node{
 					Start: p.currentToken.Start(),
 					End:   p.currentToken.End(),
-					Type:  "Identifier",
+					Type:  "Literal",
 				},
-				Value: p.currentToken.Lexeme(),
+				Value: p.currentToken.Value(),
 			}
 			p.nextToken()
 
@@ -165,7 +165,6 @@ func (p *Parser) parseIfExpression() ast.Statement {
 			p.addError("error: wrong conditional type, allowed types are 'true' or 'false' keyword or any conditional expression")
 			return nil
 		}
-
 	}
 	if keyword := token.GetKeyword(p.currentToken.Lexeme()); keyword != "do" {
 		p.addError("error: missing 'do' symbol")
@@ -406,6 +405,7 @@ func (p *Parser) parseBinaryExpression() ast.Statement {
 	}
 	firstOperatorToken := p.currentToken
 	secondOperatorToken := p.lexer.PeekToken(1)
+
 	if secondOperatorToken.TokenType() != token.SEMICOLON && secondOperatorToken.TokenType() != token.IDENTIFIER {
 		if token.GetPriority(secondOperatorToken.TokenType()) > token.GetPriority(firstOperatorToken.TokenType()) {
 			p.nextToken()
@@ -456,13 +456,14 @@ func (p *Parser) parseBinaryExpression() ast.Statement {
 				}
 				p.nextToken()
 				p.nextToken()
+				topRight := p.parseExpression()
 				return ast.BinaryExpression{
 					Node: ast.Node{
 						Start: start,
-						End:   rightSide.(ast.Literal).End,
+						End:   topRight.(ast.BinaryExpression).End,
 						Type:  "BinaryExpression",
 					},
-					Right: p.parseExpression(),
+					Right: topRight,
 					Left: ast.BinaryExpression{
 						Node: ast.Node{
 							Start: start,

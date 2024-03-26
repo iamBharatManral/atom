@@ -7,7 +7,6 @@ import (
 	"github.com/iamBharatManral/atom.git/cmd/internal/env"
 	"github.com/iamBharatManral/atom.git/cmd/internal/error"
 	"github.com/iamBharatManral/atom.git/cmd/internal/result"
-	"github.com/iamBharatManral/atom.git/cmd/internal/token"
 )
 
 func Eval(node ast.AstNode, env *env.Environment) result.Result {
@@ -143,9 +142,6 @@ func evalLetStatement(stmt ast.LetStatement, env *env.Environment) result.Result
 
 func evalIdentifier(stmt ast.Identifier, env *env.Environment) result.Result {
 	id := stmt.Value
-	if keyword := token.GetKeyword(id); keyword == "true" || keyword == "false" {
-		return createResult("boolean", keyword)
-	}
 	if result, ok := env.Get(id); ok {
 		return createResult("identifier", result.Value)
 	}
@@ -164,10 +160,10 @@ func evalIfExpression(stmt ast.IfBlock, env *env.Environment) result.Result {
 	switch test := test.(type) {
 	case ast.BinaryExpression:
 		testResult = evalBinaryExpression(test, env)
-	case ast.Identifier:
-		testResult = evalIdentifier(test, env)
+	case ast.Literal:
+		testResult = createResult("boolean", test.Value)
 	}
-	if testResult.Value == "true" || testResult.Value == true {
+	if testResult.Value == true {
 		finalResult := Eval(stmt.Consequent, env)
 		return createResult("conditional", finalResult.Value)
 	}
@@ -181,10 +177,10 @@ func evalIfElseExpression(stmt ast.IfElseBlock, env *env.Environment) result.Res
 	switch test := test.(type) {
 	case ast.BinaryExpression:
 		testResult = evalBinaryExpression(test, env)
-	case ast.Identifier:
-		testResult = evalIdentifier(test, env)
+	case ast.Literal:
+		testResult = createResult("boolean", test.Value)
 	}
-	if testResult.Value == "true" || testResult.Value == true {
+	if testResult.Value == true {
 		finalResult := Eval(stmt.Consequent, env)
 		return createResult("conditional", finalResult.Value)
 	} else {
@@ -233,9 +229,49 @@ func evalBinaryExpression(stmt ast.BinaryExpression, env *env.Environment) resul
 		return evalNotEqual(left, right)
 	case "==":
 		return evalEqualEqual(left, right)
+	case "and":
+		return evalLogicalAnd(left, right)
+	case "or":
+		return evalLogicalOr(left, right)
 	default:
 		return error.UnsupportedOperatorError(stmt.Operator)
 	}
+}
+
+func evalLogicalAnd(left, right result.Result) result.Result {
+	if left.Type == "error" {
+		return left
+	}
+	if right.Type == "error" {
+		return right
+	}
+	switch left := left.Value.(type) {
+	case bool:
+		if right, ok := right.Value.(bool); ok {
+			return createResult("bool", left && right)
+		}
+		return error.TypeMismatchError(left, right.Value)
+	}
+	return error.UnsupportedTypeError(left, "and")
+
+}
+
+func evalLogicalOr(left, right result.Result) result.Result {
+	if left.Type == "error" {
+		return left
+	}
+	if right.Type == "error" {
+		return right
+	}
+	switch left := left.Value.(type) {
+	case bool:
+		if right, ok := right.Value.(bool); ok {
+			return createResult("bool", left || right)
+		}
+		return error.TypeMismatchError(left, right.Value)
+	}
+	return error.UnsupportedTypeError(left, "or")
+
 }
 
 func evalEqualEqual(left, right result.Result) result.Result {

@@ -13,13 +13,18 @@ const (
 	INTEGER = "INTEGER"
 	FLOAT   = "FLOAT"
 
-	LE  = "LE"
-	EQ  = "EQ"
-	GT  = "GT"
-	GE  = "GE"
-	LT  = "LT"
-	NE  = "NE"
-	NOT = "NOT"
+	LE = "LE"
+	EQ = "EQ"
+	GT = "GT"
+	GE = "GE"
+	LT = "LT"
+	NE = "NE"
+
+	NOT   = "NOT"
+	AND   = "AND"
+	OR    = "OR"
+	TRUE  = "TRUE"
+	FALSE = "FALSE"
 
 	ARROW  = "ARROW"
 	BAR    = "BAR"
@@ -40,12 +45,16 @@ func RegisterPriorities() {
 	priorities["MINUS"] = 1
 	priorities["STAR"] = 2
 	priorities["SLASH"] = 2
-	priorities["LE"] = 3
-	priorities["NE"] = 3
-	priorities["LT"] = 3
-	priorities["GT"] = 3
-	priorities["GE"] = 3
-	priorities["NOT"] = 4
+	priorities["AND"] = 4
+	priorities["OR"] = 5
+	priorities["NOT"] = 6
+
+	priorities["LE"] = 7
+	priorities["NE"] = 7
+	priorities["LT"] = 7
+	priorities["GT"] = 7
+	priorities["GE"] = 7
+	priorities["EQ"] = 7
 }
 
 func GetPriority(token string) int {
@@ -62,7 +71,6 @@ func RegisterKeyWords() {
 	keywords["else"] = "else"
 	keywords["false"] = "false"
 	keywords["true"] = "true"
-	keywords["nil"] = "nil"
 	keywords["fn"] = "fn"
 }
 

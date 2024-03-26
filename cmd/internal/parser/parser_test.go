@@ -420,13 +420,13 @@ func TestLiteralsAndExpressions(t *testing.T) {
 		}, input: `if 38 <= 121 do 1; else 2;`},
 		{name: "if else block with true keyword", want: []ast.Statement{
 			ast.IfElseBlock{
-				Test: ast.Identifier{
+				Test: ast.Literal{
 					Node: ast.Node{
 						Start: 3,
 						End:   6,
-						Type:  "Identifier",
+						Type:  "Literal",
 					},
-					Value: "true",
+					Value: true,
 				},
 				Consequent: ast.Literal{
 					Node: ast.Node{
@@ -741,6 +741,90 @@ func TestLiteralsAndExpressions(t *testing.T) {
 		}, input: `let incr = fn |a| ->
 a + 1;
 end;`},
+		{name: "logical AND", want: []ast.Statement{
+			ast.BinaryExpression{
+				Left: ast.Literal{
+					Node: ast.Node{
+						Type:  "Literal",
+						Start: 0,
+						End:   3,
+					},
+					Value: true,
+				},
+				Right: ast.Literal{
+					Node: ast.Node{
+						Type:  "Literal",
+						Start: 9,
+						End:   13,
+					},
+					Value: false,
+				},
+				Operator: "and",
+				Node: ast.Node{
+					Start: 0,
+					End:   13,
+					Type:  "BinaryExpression",
+				},
+			},
+		}, input: "true and false;"},
+		{name: "logical binary expression", want: []ast.Statement{
+			ast.BinaryExpression{
+				Left: ast.BinaryExpression{
+					Left: ast.Literal{
+						Node: ast.Node{
+							Start: 0,
+							End:   1,
+							Type:  "Literal",
+						},
+						Value: 10,
+					},
+					Right: ast.Literal{
+						Node: ast.Node{
+							Start: 5,
+							End:   6,
+							Type:  "Literal",
+						},
+						Value: 12,
+					},
+					Operator: "<",
+					Node: ast.Node{
+						Start: 0,
+						End:   6,
+						Type:  "BinaryExpression",
+					},
+				},
+				Right: ast.BinaryExpression{
+					Left: ast.Literal{
+						Node: ast.Node{
+							Start: 11,
+							End:   12,
+							Type:  "Literal",
+						},
+						Value: 14,
+					},
+					Right: ast.Literal{
+						Node: ast.Node{
+							Start: 16,
+							End:   17,
+							Type:  "Literal",
+						},
+						Value: 34,
+					},
+					Operator: ">",
+					Node: ast.Node{
+						Start: 11,
+						End:   17,
+						Type:  "BinaryExpression",
+					},
+				},
+				Operator: "or",
+				Node: ast.Node{
+					Start: 0,
+					End:   17,
+					Type:  "BinaryExpression",
+				},
+			},
+		}, input: "10 < 12 or 14 > 34;"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -77,22 +77,20 @@ func (l *Lexer) NextToken() token.Token {
 			return token.New(token.GE, ">=", "", l.currentPos-1, l.currentPos)
 		}
 		return token.New(token.GT, ">", "", l.currentPos, l.currentPos)
+	case '|':
+		return token.New(token.BAR, "|", "", l.currentPos, l.currentPos)
 	case '!':
 		if l.peek() == '=' {
 			l.readChar()
 			return token.New(token.NE, "!=", "", l.currentPos-1, l.currentPos)
 		}
 		return token.New(token.NOT, "!", "", l.currentPos, l.currentPos)
-
-	case '|':
-		return token.New(token.BAR, "|", "", l.currentPos, l.currentPos)
 	case ',':
 		return token.New(token.COMMA, ",", "", l.currentPos, l.currentPos)
 	case '(':
 		return token.New(token.LPAREN, "(", "", l.currentPos, l.currentPos)
 	case ')':
 		return token.New(token.RPAREN, ")", "", l.currentPos, l.currentPos)
-
 	default:
 		{
 			if unicode.IsDigit(l.currentChar) {
@@ -139,12 +137,36 @@ func (l *Lexer) identifier() (token.Token, error) {
 		l.readChar()
 	}
 	if l.currentPos+1 == len(l.input) {
-		return token.New(token.IDENTIFIER, string(l.input[start:l.currentPos+1]), "", start, l.currentPos), nil
+		id := string(l.input[start : l.currentPos+1])
+		if token := l.createKeywordToken(id, start, l.currentPos); token.Lexeme() != "" {
+			return token, nil
+		}
+		return token.New(token.IDENTIFIER, id, "", start, l.currentPos), nil
 	}
 	if unicode.IsDigit(l.peek()) {
 		return token.Token{}, fmt.Errorf("error: invalid identifer at line: %d, column %d", l.line, l.currentPos+1)
 	}
-	return token.New(token.IDENTIFIER, string(l.input[start:l.currentPos+1]), "", start, l.currentPos), nil
+	id := string(l.input[start : l.currentPos+1])
+	if token := l.createKeywordToken(id, start, l.currentPos); token.Lexeme() != "" {
+		return token, nil
+	}
+	return token.New(token.IDENTIFIER, id, "", start, l.currentPos), nil
+}
+
+func (l *Lexer) createKeywordToken(id string, start int, end int) token.Token {
+	if id == "and" {
+		return token.New(token.AND, id, "", start, end)
+	}
+	if id == "or" {
+		return token.New(token.OR, id, "", start, end)
+	}
+	if id == "true" {
+		return token.New(token.TRUE, "true", true, start, end)
+	}
+	if id == "false" {
+		return token.New(token.FALSE, "false", false, start, end)
+	}
+	return token.Token{}
 }
 
 func (l *Lexer) ignoreWhiteSpace() {

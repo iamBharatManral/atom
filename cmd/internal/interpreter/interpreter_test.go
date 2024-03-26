@@ -27,6 +27,8 @@ func TestEvaluation(t *testing.T) {
 		{name: "if else block with true keyword", want: "true", input: `if true do "true";`},
 		{name: "if else block with false keyword", want: "false", input: `if false do "true"; else "false";`},
 		{name: "function declaration", want: "()", input: `fn hello|a,b| -> a; end;`},
+		{name: "binary expression with logical and", want: false, input: `10 != 10 and 12 > 10;`},
+		{name: "binary expression with logical or", want: true, input: `10 > 10 or 10 != 10 or 12 > 7;`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -126,7 +126,7 @@ func TestTokens(t *testing.T) {
 		}, input: `if 10 < 12 do "true"; else "false";`},
 		{name: "if else conditon with true keyword", want: []token.Token{
 			token.New(token.IDENTIFIER, "if", "", 0, 1),
-			token.New(token.IDENTIFIER, "true", "", 3, 6),
+			token.New(token.TRUE, "true", true, 3, 6),
 			token.New(token.IDENTIFIER, "do", "", 8, 9),
 			token.New(token.STRING, "\"true\"", "true", 11, 16),
 			token.New(token.SEMICOLON, ";", "", 17, 17),
@@ -200,6 +200,20 @@ func TestTokens(t *testing.T) {
 			token.New(token.SEMICOLON, ";", "", 31, 31),
 			token.New(token.EOF, "", "", 32, 32),
 		}, input: `let sum = fn |a, b| -> a+b; end;`},
+		{name: "logic and operator: true and false;", want: []token.Token{
+			token.New(token.TRUE, "true", true, 0, 3),
+			token.New(token.AND, "and", "", 5, 7),
+			token.New(token.FALSE, "false", false, 9, 13),
+			token.New(token.SEMICOLON, ";", "", 14, 14),
+			token.New(token.EOF, "", "", 15, 15),
+		}, input: `true and false;`},
+		{name: "logic or operator: true or false;", want: []token.Token{
+			token.New(token.TRUE, "true", true, 0, 3),
+			token.New(token.OR, "or", "", 5, 6),
+			token.New(token.FALSE, "false", false, 8, 12),
+			token.New(token.SEMICOLON, ";", "", 13, 13),
+			token.New(token.EOF, "", "", 14, 14),
+		}, input: `true or false;`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
