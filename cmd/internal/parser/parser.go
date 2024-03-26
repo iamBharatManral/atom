@@ -302,7 +302,7 @@ func (p *Parser) parseRHS(kind string, left ast.Identifier, start int) ast.State
 	var rightSide any
 	nextTokenOperator := p.lexer.PeekToken(1)
 	nextTokenType := nextTokenOperator.TokenType()
-	if nextTokenType == token.PLUS || nextTokenType == token.MINUS || nextTokenType == token.STAR || nextTokenType == token.SLASH || nextTokenType == token.EQ || nextTokenType == token.NE || nextTokenType == token.GE || nextTokenType == token.GT || nextTokenType == token.LE || nextTokenType == token.LT {
+	if nextTokenType == token.PLUS || nextTokenType == token.MINUS || nextTokenType == token.STAR || nextTokenType == token.SLASH || nextTokenType == token.EQ || nextTokenType == token.NE || nextTokenType == token.GE || nextTokenType == token.GT || nextTokenType == token.LE || nextTokenType == token.LT || nextTokenType == token.AND || nextTokenType == token.OR {
 		p.nextToken()
 		rightSide = p.parseBinaryExpression()
 		return ast.LetStatement{
@@ -322,7 +322,7 @@ func (p *Parser) parseRHS(kind string, left ast.Identifier, start int) ast.State
 		case token.IDENTIFIER:
 			rightSide = p.parseIdentifier()
 			end = rightSide.(ast.Identifier).End
-		case token.STRING, token.INTEGER, token.FLOAT:
+		case token.STRING, token.INTEGER, token.FLOAT, token.TRUE, token.FALSE:
 			rightSide = ast.Literal{
 				Value: p.currentToken.Value(),
 				Node: ast.Node{
@@ -460,7 +460,7 @@ func (p *Parser) parseBinaryExpression() ast.Statement {
 				return ast.BinaryExpression{
 					Node: ast.Node{
 						Start: start,
-						End:   topRight.(ast.BinaryExpression).End,
+						End:   topRight.(ast.Literal).End,
 						Type:  "BinaryExpression",
 					},
 					Right: topRight,
