@@ -68,7 +68,10 @@ func evalFunction(node ast.FunctionEvaluation, ev *env.Environment) result.Resul
 	for _, stmt := range funcDecl.Body {
 		results = append(results, Eval(stmt, localEnv))
 	}
-	return results[len(results)-1]
+	if len(results) > 0 {
+		return results[len(results)-1]
+	}
+	return result.Result{}
 }
 
 func evalFunctionExpression(stmt ast.FunctionExpression, env *env.Environment, fnName string) result.Result {
@@ -297,6 +300,11 @@ func evalEqualEqual(left, right result.Result) result.Result {
 			return createResult("string", left == right)
 		}
 		return error.TypeMismatchError(left, right.Value)
+	case bool:
+		if right, ok := right.Value.(bool); ok {
+			return createResult("bool", left == right)
+		}
+		return error.TypeMismatchError(left, right.Value)
 	}
 	return error.UnsupportedTypeError(left, "==")
 
@@ -325,7 +333,13 @@ func evalNotEqual(left, right result.Result) result.Result {
 			return createResult("string", left != right)
 		}
 		return error.TypeMismatchError(left, right.Value)
+	case bool:
+		if right, ok := right.Value.(bool); ok {
+			return createResult("bool", left == right)
+		}
+		return error.TypeMismatchError(left, right.Value)
 	}
+
 	return error.UnsupportedTypeError(left, "!=")
 }
 
