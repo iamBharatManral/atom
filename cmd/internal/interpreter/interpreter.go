@@ -37,7 +37,7 @@ func Eval(node ast.AstNode, env *env.Environment) result.Result {
 }
 
 func evalFunction(node ast.FunctionEvaluation, ev *env.Environment) result.Result {
-	localEnv := env.New(ev)
+	localEnv := env.New()
 	fnName := node.Name.Value
 	var funcDecl ast.FunctionExpression
 	if fn, ok := ev.Get(fnName); !ok {

@@ -457,10 +457,19 @@ func (p *Parser) parseBinaryExpression() ast.Statement {
 				p.nextToken()
 				p.nextToken()
 				topRight := p.parseExpression()
+				var finalEnd int
+				switch topRight.(type) {
+				case ast.Identifier:
+					finalEnd = topRight.(ast.Identifier).End
+				case ast.Literal:
+					finalEnd = topRight.(ast.Literal).End
+				case ast.BinaryExpression:
+					finalEnd = topRight.(ast.BinaryExpression).End
+				}
 				return ast.BinaryExpression{
 					Node: ast.Node{
 						Start: start,
-						End:   topRight.(ast.Literal).End,
+						End:   finalEnd,
 						Type:  "BinaryExpression",
 					},
 					Right: topRight,

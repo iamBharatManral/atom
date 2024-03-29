@@ -25,7 +25,7 @@ var inputCh = make(chan string)
 func Start() {
 	util.Banner()
 	message()
-	env := env.New(nil)
+	env := env.New()
 	for {
 		input := userInput()
 		lexer := lexer.New(input)

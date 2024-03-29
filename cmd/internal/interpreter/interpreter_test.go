@@ -35,7 +35,7 @@ func TestEvaluation(t *testing.T) {
 			lexer := lexer.New([]rune(tt.input))
 			parser := parser.New(lexer)
 			program := parser.Parse()
-			env := env.New(nil)
+			env := env.New()
 			for i := range program.Body {
 				output := Eval(program.Body[i], env)
 				if output.Value != tt.want {
