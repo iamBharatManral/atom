@@ -20,8 +20,6 @@ import (
 const MAIN_PROMPT = "λ> "
 const REST_OF_LINE_PROMPT = "... "
 
-var inputCh = make(chan string)
-
 func Start() {
 	util.Banner()
 	message()
