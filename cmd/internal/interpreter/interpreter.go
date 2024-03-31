@@ -10,6 +10,7 @@ import (
 )
 
 func Eval(node ast.AstNode, env *env.Environment) result.Result {
+	fmt.Println("node", node)
 	switch node := node.(type) {
 	case ast.Program:
 		return evalStatements(node.Body, env)
@@ -96,6 +97,9 @@ func evalAssignment(stmt ast.AssignmentStatement, env *env.Environment) result.R
 
 func evalRHS(stmt ast.LetStatement, env *env.Environment) result.Result {
 	id := stmt.Left.Value
+	if _, ok := env.Get(id); ok {
+		env.Delete(id)
+	}
 	switch right := stmt.Right.(type) {
 	case ast.Literal:
 		env.Set(id, createResult("literal", right.Value))
@@ -110,12 +114,21 @@ func evalRHS(stmt ast.LetStatement, env *env.Environment) result.Result {
 		if r.Type == "error" {
 			return r
 		}
-		env.Set(id, result.Result{
-			Type:  "BinaryExpression",
-			Value: r.Value,
-		})
+		env.Set(id, createResult("BinaryExpression", r.Value))
 	case ast.FunctionExpression:
 		return evalFunctionExpression(stmt.Right.(ast.FunctionExpression), env, id)
+	case ast.IfBlock:
+		r := evalIfExpression(right, env)
+		if r.Type == "error" {
+			return r
+		}
+		env.Set(id, createResult("IfExpression", r.Value))
+	case ast.IfElseBlock:
+		r := evalIfElseExpression(right, env)
+		if r.Type == "error" {
+			return r
+		}
+		env.Set(id, createResult("IfElseExpression", r.Value))
 	default:
 		return error.UnsupportedTokensError()
 	}

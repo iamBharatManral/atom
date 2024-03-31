@@ -24,3 +24,7 @@ func (e *Environment) Set(symbol string, result result.Result) {
 func (e *Environment) Symbols() map[string]result.Result {
 	return e.symbols
 }
+
+func (e *Environment) Delete(symbol string) {
+	delete(e.symbols, symbol)
+}

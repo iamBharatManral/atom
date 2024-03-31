@@ -39,6 +39,7 @@ func (p *Parser) Parse() ast.Program {
 		if stmt != nil {
 			program.Body = append(program.Body, stmt)
 		}
+		fmt.Println("end of stmt", p.currentToken)
 		p.nextToken()
 	}
 	return program
@@ -283,6 +284,26 @@ func (p *Parser) parseRHS(kind string, left ast.Identifier, start int) ast.State
 			Node: ast.Node{
 				Start: start,
 				End:   rightSide.(ast.FunctionExpression).End,
+				Type:  "LetStatement",
+			},
+			Operator: "=",
+		}
+	} else if p.peekToken.Lexeme() == "if" {
+		p.nextToken()
+		rightSide := p.parseIfExpression()
+		var end int
+		switch rightSide.(type) {
+		case ast.IfBlock:
+			end = rightSide.(ast.IfBlock).End
+		case ast.IfElseBlock:
+			end = rightSide.(ast.IfElseBlock).End
+		}
+		return ast.LetStatement{
+			Left:  left,
+			Right: rightSide,
+			Node: ast.Node{
+				Start: start,
+				End:   end,
 				Type:  "LetStatement",
 			},
 			Operator: "=",
