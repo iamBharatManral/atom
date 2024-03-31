@@ -31,9 +31,24 @@ func Eval(node ast.AstNode, env *env.Environment) result.Result {
 		return evalFunctionExpression(node, env, "")
 	case ast.FunctionEvaluation:
 		return evalFunction(node, env)
+	case ast.ReturnStatement:
+		return evalReturnStatement(node, env)
 	default:
 		return error.UnsupportedTokensError()
 	}
+}
+
+func evalReturnStatement(node ast.ReturnStatement, ev *env.Environment) result.Result {
+	switch v := node.Value.(type) {
+	case ast.Identifier:
+		return evalIdentifier(v, ev)
+	case ast.Literal:
+		return createResult("literal", v.Value)
+	case ast.BinaryExpression:
+		return evalBinaryExpression(v, ev)
+
+	}
+	return result.Result{}
 }
 
 func evalFunction(node ast.FunctionEvaluation, ev *env.Environment) result.Result {
@@ -66,7 +81,12 @@ func evalFunction(node ast.FunctionEvaluation, ev *env.Environment) result.Resul
 
 	var results []result.Result
 	for _, stmt := range funcDecl.Body {
-		results = append(results, Eval(stmt, localEnv))
+		if _, ok := stmt.(ast.ReturnStatement); ok {
+			return Eval(stmt, localEnv)
+		} else {
+
+			results = append(results, Eval(stmt, localEnv))
+		}
 	}
 	if len(results) > 0 {
 		return results[len(results)-1]

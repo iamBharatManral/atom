@@ -133,10 +133,69 @@ func (p *Parser) parseStatement() ast.Statement {
 	if token.GetKeyword(p.currentToken.Lexeme()) == "fn" {
 		return p.parseFunctionExpression()
 	}
+	if token.GetKeyword(p.currentToken.Lexeme()) == "return" {
+		return p.parseReturnStatement()
+	}
 	if p.peekToken.TokenType() == token.ASSIGN {
 		return p.parseAssignment()
 	}
 	return p.parseIdentifier()
+}
+
+func (p *Parser) parseReturnStatement() ast.Statement {
+	start := p.currentToken.Start()
+	p.nextToken()
+	if p.peekToken.TokenType() != token.SEMICOLON {
+		result := p.parseSingleStatement()
+		var end int
+		switch result.(type) {
+		case ast.BinaryExpression:
+			end = result.(ast.BinaryExpression).End
+		case ast.FunctionExpression:
+			end = result.(ast.FunctionExpression).End
+		}
+		return ast.ReturnStatement{
+			Value: result,
+			Node: ast.Node{
+				Start: start,
+				End:   end,
+				Type:  "returnstatement",
+			},
+		}
+	}
+	switch p.currentToken.TokenType() {
+	case token.IDENTIFIER:
+		v := p.parseIdentifier()
+		return ast.ReturnStatement{
+			Value: v,
+			Node: ast.Node{
+				Start: start,
+				End:   v.(ast.Identifier).End,
+				Type:  "returnstatement",
+			},
+		}
+	case token.STRING, token.INTEGER, token.FLOAT:
+		stmt := ast.ReturnStatement{
+			Value: ast.Literal{
+				Node: ast.Node{
+					Start: p.currentToken.Start(),
+					End:   p.currentToken.End(),
+					Type:  "Literal",
+				},
+				Value: p.currentToken.Value(),
+			},
+			Node: ast.Node{
+				Start: start,
+				End:   p.currentToken.End(),
+				Type:  "ReturnStatement",
+			},
+		}
+		p.nextToken()
+		return stmt
+
+	}
+	p.addError("error: unsupported return type, must be literal or identifier")
+	return nil
 }
 
 func (p *Parser) parseIfExpression() ast.Statement {

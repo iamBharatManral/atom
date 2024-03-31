@@ -72,6 +72,7 @@ func RegisterKeyWords() {
 	keywords["false"] = "false"
 	keywords["true"] = "true"
 	keywords["fn"] = "fn"
+	keywords["return"] = "return"
 }
 
 func IsKeyword(key string) bool {

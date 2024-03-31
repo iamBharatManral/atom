@@ -74,6 +74,11 @@ type FunctionEvaluation struct {
 	Name       Identifier
 }
 
+type ReturnStatement struct {
+	Value Statement
+	Node
+}
+
 type Program struct {
 	Body []Statement
 	Node
