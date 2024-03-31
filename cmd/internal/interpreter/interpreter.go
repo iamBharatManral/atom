@@ -10,7 +10,6 @@ import (
 )
 
 func Eval(node ast.AstNode, env *env.Environment) result.Result {
-	fmt.Println("node", node)
 	switch node := node.(type) {
 	case ast.Program:
 		return evalStatements(node.Body, env)

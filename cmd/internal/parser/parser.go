@@ -39,7 +39,6 @@ func (p *Parser) Parse() ast.Program {
 		if stmt != nil {
 			program.Body = append(program.Body, stmt)
 		}
-		fmt.Println("end of stmt", p.currentToken)
 		p.nextToken()
 	}
 	return program
@@ -174,8 +173,7 @@ func (p *Parser) parseIfExpression() ast.Statement {
 	p.nextToken()
 	consequent := p.parseSingleStatement()
 	end := p.currentToken.Start() - 1
-	p.nextToken()
-	if keyword := token.GetKeyword(p.currentToken.Lexeme()); keyword != "else" {
+	if keyword := token.GetKeyword(p.peekToken.Lexeme()); keyword != "else" {
 		return ast.IfBlock{
 			Node: ast.Node{
 				Start: start,
@@ -186,6 +184,7 @@ func (p *Parser) parseIfExpression() ast.Statement {
 			Test:       test,
 		}
 	}
+	p.nextToken()
 	p.nextToken()
 	alternate := p.parseSingleStatement()
 	return ast.IfElseBlock{
