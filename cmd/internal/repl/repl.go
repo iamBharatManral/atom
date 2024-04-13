@@ -52,8 +52,7 @@ func Start() {
 
 func userInput() []rune {
 	endOfStatements := make(map[string]string)
-	endOfStatements["let"] = ";"
-	endOfStatements["fn"] = "end;"
+	endOfStatements["fn"] = "end"
 	var finalInput string
 	scanner := bufio.NewScanner(os.Stdin)
 	var endOfStatement string = endOfStatements["let"]
@@ -69,13 +68,9 @@ func userInput() []rune {
 			log.Fatal(err)
 		}
 		input := scanner.Text()
-		finalInput += input
+		finalInput += input + "\n"
 		if strings.Contains(finalInput, "fn") {
 			endOfStatement = endOfStatements["fn"]
-		} else if strings.Contains(finalInput, "let") {
-			endOfStatement = endOfStatements["let"]
-		} else {
-			endOfStatement = ";"
 		}
 
 		if len(input) == 0 {

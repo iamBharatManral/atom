@@ -16,6 +16,8 @@ func Usage() {
 	fmt.Println("\nThere are two ways to explore atom: 🌖")
 	fmt.Println("\t1. atom <enter>: will open atom interpreter")
 	fmt.Println("\t2. atom <file.om>: will execute the file")
+	fmt.Println("\toptions:")
+	fmt.Println("\t\t1. -d: to print stack trace")
 	fmt.Println("Enjoy!")
 	fmt.Println("")
 }

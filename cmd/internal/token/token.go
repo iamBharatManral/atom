@@ -1,30 +1,28 @@
 package token
 
 const (
-	ILLEGAL   = "ILLEGAL"
-	EOF       = "EOF"
-	SEMICOLON = "SEMICOLON"
-	PLUS      = "PLUS"
-	MINUS     = "MINUS"
-	STAR      = "STAR"
-	SLASH     = "SLASH"
+	ILLEGAL = "ILLEGAL"
+	EOF     = "EOF"
+	NEWLINE = "NEWLINE"
+
+	PLUS  = "PLUS"
+	MINUS = "MINUS"
+	STAR  = "STAR"
+	SLASH = "SLASH"
 
 	STRING  = "STRING"
 	INTEGER = "INTEGER"
 	FLOAT   = "FLOAT"
 
-	LE = "LE"
-	EQ = "EQ"
-	GT = "GT"
-	GE = "GE"
-	LT = "LT"
-	NE = "NE"
+	LE     = "LE"
+	EQ     = "EQ"
+	GT     = "GT"
+	GE     = "GE"
+	LT     = "LT"
+	NE     = "NE"
+	ASSIGN = "ASSIGN"
 
-	NOT   = "NOT"
-	AND   = "AND"
-	OR    = "OR"
-	TRUE  = "TRUE"
-	FALSE = "FALSE"
+	NOT = "NOT"
 
 	ARROW  = "ARROW"
 	BAR    = "BAR"
@@ -33,31 +31,30 @@ const (
 	RPAREN = "RPAREN"
 
 	IDENTIFIER = "IDENTIFIER"
-	ASSIGN     = "ASSIGN"
 )
 
 var keywords = make(map[string]string)
-var priorities = make(map[string]int)
+var priorities = make(map[string][]any)
 
 func RegisterPriorities() {
-	priorities["NONE"] = 0
-	priorities["PLUS"] = 1
-	priorities["MINUS"] = 1
-	priorities["STAR"] = 2
-	priorities["SLASH"] = 2
-	priorities["AND"] = 4
-	priorities["OR"] = 5
-	priorities["NOT"] = 6
+	priorities["NONE"] = []any{0, "left"}
+	priorities["+"] = []any{1, "left"}
+	priorities["-"] = []any{1, "left"}
+	priorities["*"] = []any{2, "left"}
+	priorities["/"] = []any{2, "left"}
+	priorities["and"] = []any{3, "left"}
+	priorities["or"] = []any{4, "left"}
+	priorities["!"] = []any{5, "left"}
+	priorities["<="] = []any{6, "left"}
+	priorities["!="] = []any{6, "left"}
+	priorities["<"] = []any{6, "left"}
+	priorities[">"] = []any{6, "left"}
+	priorities[">="] = []any{6, "left"}
+	priorities["=="] = []any{6, "left"}
 
-	priorities["LE"] = 7
-	priorities["NE"] = 7
-	priorities["LT"] = 7
-	priorities["GT"] = 7
-	priorities["GE"] = 7
-	priorities["EQ"] = 7
 }
 
-func GetPriority(token string) int {
+func GetPriority(token string) []any {
 	if priority, ok := priorities[token]; ok {
 		return priority
 	}

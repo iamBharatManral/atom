@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	filerunner "github.com/iamBharatManral/atom.git/cmd/internal/fileRunner"
+	"github.com/iamBharatManral/atom.git/cmd/internal/fileRunner"
 	"github.com/iamBharatManral/atom.git/cmd/internal/repl"
 	"github.com/iamBharatManral/atom.git/cmd/internal/util"
 )
@@ -18,7 +18,11 @@ func main() {
 			os.Exit(0)
 		} else {
 			filename := args[1]
-			filerunner.Execute(filename)
+			filerunner.Execute(filename, false)
 		}
+	} else if len(args) == 3 {
+		filename := args[2]
+		filerunner.Execute(filename, true)
 	}
+
 }

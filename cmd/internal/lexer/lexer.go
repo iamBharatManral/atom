@@ -63,8 +63,6 @@ func (l *Lexer) NextToken() token.Token {
 			}
 			return tok
 		}
-	case ';':
-		return token.New(token.SEMICOLON, ";", "", l.currentPos, l.currentPos)
 	case '<':
 		if l.peek() == '=' {
 			l.readChar()
@@ -91,6 +89,9 @@ func (l *Lexer) NextToken() token.Token {
 		return token.New(token.LPAREN, "(", "", l.currentPos, l.currentPos)
 	case ')':
 		return token.New(token.RPAREN, ")", "", l.currentPos, l.currentPos)
+
+	case '\n':
+		return token.New(token.NEWLINE, "", "", l.currentPos, l.currentPos)
 	default:
 		{
 			if unicode.IsDigit(l.currentChar) {
@@ -120,7 +121,7 @@ func (l *Lexer) PeekToken(peek int) token.Token {
 	var tt token.Token
 	for i := 1; i <= peek; i += 1 {
 		tt = l.NextToken()
-		if tt.TokenType() == token.SEMICOLON {
+		if tt.TokenType() == token.EOF {
 			break
 		}
 	}
@@ -138,35 +139,13 @@ func (l *Lexer) identifier() (token.Token, error) {
 	}
 	if l.currentPos+1 == len(l.input) {
 		id := string(l.input[start : l.currentPos+1])
-		if token := l.createKeywordToken(id, start, l.currentPos); token.Lexeme() != "" {
-			return token, nil
-		}
 		return token.New(token.IDENTIFIER, id, "", start, l.currentPos), nil
 	}
 	if unicode.IsDigit(l.peek()) {
 		return token.Token{}, fmt.Errorf("error: invalid identifer at line: %d, column %d", l.line, l.currentPos+1)
 	}
 	id := string(l.input[start : l.currentPos+1])
-	if token := l.createKeywordToken(id, start, l.currentPos); token.Lexeme() != "" {
-		return token, nil
-	}
 	return token.New(token.IDENTIFIER, id, "", start, l.currentPos), nil
-}
-
-func (l *Lexer) createKeywordToken(id string, start int, end int) token.Token {
-	if id == "and" {
-		return token.New(token.AND, id, "", start, end)
-	}
-	if id == "or" {
-		return token.New(token.OR, id, "", start, end)
-	}
-	if id == "true" {
-		return token.New(token.TRUE, "true", true, start, end)
-	}
-	if id == "false" {
-		return token.New(token.FALSE, "false", false, start, end)
-	}
-	return token.Token{}
 }
 
 func (l *Lexer) ignoreWhiteSpace() {
@@ -244,10 +223,7 @@ func (l *Lexer) numberToken() (token.Token, error) {
 
 func (l *Lexer) isWhiteSpace() bool {
 	ch := l.currentChar
-	if ch == '\n' {
-		l.line += 1
-	}
-	return ch == '\n' || ch == '\t' || ch == '\r' || ch == ' '
+	return ch == '\t' || ch == '\r' || ch == ' '
 }
 
 func (l *Lexer) readNumber() ([]rune, error) {

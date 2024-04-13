@@ -2,6 +2,8 @@ package interpreter
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
 
 	"github.com/iamBharatManral/atom.git/cmd/internal/ast"
 	"github.com/iamBharatManral/atom.git/cmd/internal/env"
@@ -9,7 +11,7 @@ import (
 	"github.com/iamBharatManral/atom.git/cmd/internal/result"
 )
 
-func Eval(node ast.AstNode, env *env.Environment) result.Result {
+func Eval(node ast.Statement, env *env.Environment) result.Result {
 	switch node := node.(type) {
 	case ast.Program:
 		return evalStatements(node.Body, env)
@@ -41,12 +43,13 @@ func Eval(node ast.AstNode, env *env.Environment) result.Result {
 func evalReturnStatement(node ast.ReturnStatement, ev *env.Environment) result.Result {
 	switch v := node.Value.(type) {
 	case ast.Identifier:
-		return evalIdentifier(v, ev)
+		return createResult("return", evalIdentifier(v, ev).Value)
 	case ast.Literal:
-		return createResult("literal", v.Value)
+		return createResult("return", v.Value)
 	case ast.BinaryExpression:
-		return evalBinaryExpression(v, ev)
-
+		return createResult("return", evalBinaryExpression(v, ev))
+	case ast.FunctionEvaluation:
+		return createResult("return", evalFunction(v, ev))
 	}
 	return result.Result{}
 }
@@ -63,29 +66,39 @@ func evalFunction(node ast.FunctionEvaluation, ev *env.Environment) result.Resul
 	if fnName != node.Name.Value {
 		return error.UndefinedError(node.Name.Value)
 	}
-	if len(node.Parameters) != len(funcDecl.Parameters) {
-		return error.NotEnoughArguments(fmt.Sprintf("not enough arguments. require: %d, got: %d", len(funcDecl.Parameters), len(node.Parameters)))
+	if len(node.Arguments) != len(funcDecl.Parameters) {
+		return error.NotEnoughArguments(fmt.Sprintf("error: arguments count mismatch. require: %d, got: %d", len(funcDecl.Parameters), len(node.Arguments)))
 	}
-	for i, stmt := range node.Parameters {
+	localEnv.Set(fnName, createResult("function declaration", funcDecl))
+	for i, stmt := range node.Arguments {
 		switch stmt := stmt.(type) {
 		case ast.Identifier:
 			result := evalIdentifier(stmt, ev)
 			if result.Type == "error" {
 				return error.UndefinedError(stmt.Value)
 			}
-			localEnv.Set(stmt.Value, createResult("identifier", result.Value))
+			localEnv.Set(funcDecl.Parameters[i].Value, createResult("identifier", result.Value))
 		case ast.Literal:
 			localEnv.Set(funcDecl.Parameters[i].Value, createResult("identifier", stmt.Value))
+		case ast.BinaryExpression:
+			result := evalBinaryExpression(stmt, ev)
+			if result.Type == "error" {
+				return error.UnsupportedOperation("error: invalid binary expression")
+			}
+			localEnv.Set(funcDecl.Parameters[i].Value, createResult("binary", result.Value))
 		}
 	}
-
 	var results []result.Result
 	for _, stmt := range funcDecl.Body {
 		if _, ok := stmt.(ast.ReturnStatement); ok {
 			return Eval(stmt, localEnv)
 		} else {
-
-			results = append(results, Eval(stmt, localEnv))
+			res := Eval(stmt, localEnv)
+			if res.Type == "return" {
+				return createResult("literal", res.Value)
+			} else {
+				results = append(results, Eval(stmt, localEnv))
+			}
 		}
 	}
 	if len(results) > 0 {
@@ -116,9 +129,6 @@ func evalAssignment(stmt ast.AssignmentStatement, env *env.Environment) result.R
 
 func evalRHS(stmt ast.LetStatement, env *env.Environment) result.Result {
 	id := stmt.Left.Value
-	if _, ok := env.Get(id); ok {
-		env.Delete(id)
-	}
 	switch right := stmt.Right.(type) {
 	case ast.Literal:
 		env.Set(id, createResult("literal", right.Value))
@@ -175,18 +185,46 @@ func evalLetStatement(stmt ast.LetStatement, env *env.Environment) result.Result
 	return evalRHS(stmt, env)
 }
 
-func evalIdentifier(stmt ast.Identifier, env *env.Environment) result.Result {
-	id := stmt.Value
-	if result, ok := env.Get(id); ok {
-		return createResult("identifier", result.Value)
+func evalUniOperator(op string, val any) any {
+	switch op {
+	case "-":
+		switch reflect.TypeOf(val).Kind() {
+		case reflect.Int:
+			return -val.(int)
+		case reflect.Float64:
+			return -val.(float64)
+		}
+	case "!":
+		switch val {
+		case "true":
+			return false
+		case "false":
+			return true
+		}
+	default:
+		return val
 	}
-	return error.UndefinedError(id)
+	return val
 }
-func evalLiteral(stmt ast.Literal) result.Result {
-	return result.Result{
-		Type:  typeAsString(stmt.Value),
-		Value: stmt.Value,
+func evalIdentifier(stmt ast.Identifier, env *env.Environment) result.Result {
+	finalVal := evalUniOperator(stmt.UnaryOp, stmt.Value)
+	switch stmt.Value {
+	case "true", "false":
+		if reflect.TypeOf(finalVal).Kind() == reflect.String {
+			finalVal, _ = strconv.ParseBool(finalVal.(string))
+		}
+		return createResult("literal", finalVal)
+	default:
+		id := stmt.Value
+		if result, ok := env.Get(id); ok {
+			return createResult("identifier", result.Value)
+		}
+		return error.UndefinedError(id)
 	}
+}
+func evalLiteral(l ast.Literal) result.Result {
+	finalValue := evalUniOperator(l.UnaryOp, l.Value)
+	return createResult("literal", finalValue)
 }
 
 func evalIfExpression(stmt ast.IfBlock, env *env.Environment) result.Result {
@@ -195,11 +233,15 @@ func evalIfExpression(stmt ast.IfBlock, env *env.Environment) result.Result {
 	switch test := test.(type) {
 	case ast.BinaryExpression:
 		testResult = evalBinaryExpression(test, env)
-	case ast.Literal:
-		testResult = createResult("boolean", test.Value)
+	case ast.Identifier:
+		val, _ := strconv.ParseBool(test.Value)
+		testResult = createResult("boolean", val)
 	}
 	if testResult.Value == true {
 		finalResult := Eval(stmt.Consequent, env)
+		if finalResult.Type == "return" {
+			return finalResult
+		}
 		return createResult("conditional", finalResult.Value)
 	}
 	return result.Result{}
@@ -212,8 +254,9 @@ func evalIfElseExpression(stmt ast.IfElseBlock, env *env.Environment) result.Res
 	switch test := test.(type) {
 	case ast.BinaryExpression:
 		testResult = evalBinaryExpression(test, env)
-	case ast.Literal:
-		testResult = createResult("boolean", test.Value)
+	case ast.Identifier:
+		val, _ := strconv.ParseBool(test.Value)
+		testResult = createResult("boolean", val)
 	}
 	if testResult.Value == true {
 		finalResult := Eval(stmt.Consequent, env)

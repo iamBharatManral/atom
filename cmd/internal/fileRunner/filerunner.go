@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	"github.com/iamBharatManral/atom.git/cmd/internal/env"
@@ -12,7 +13,15 @@ import (
 	"github.com/iamBharatManral/atom.git/cmd/internal/parser"
 )
 
-func Execute(filename string) {
+func Execute(filename string, stack bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("panic: unexpected thing happenned! must be the issue with syntax!")
+			if stack {
+				debug.PrintStack()
+			}
+		}
+	}()
 	fileInfo := strings.Split(filename, ".")
 	if fileInfo[1] != "om" {
 		log.Printf("error: wrong filetype, %s is not .om file", filename)

@@ -16,7 +16,7 @@ func TypeMismatchError(first, second any) result.Result {
 func UnsupportedTypeError(left any, operator string) result.Result {
 	return result.Result{
 		Type:  "error",
-		Value: fmt.Sprintf("error: unsupported type %T for %s", left, operator),
+		Value: fmt.Sprintf("error: unsupported type '%T' for %s", left.(result.Result).Type, operator),
 	}
 }
 

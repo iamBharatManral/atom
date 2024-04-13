@@ -1,32 +1,30 @@
-Program :=
-StatementList
+Program := Statement*
 
-StatementList :=
-Statement
-StatementList
+Statement := 
+    Expression 
+    | LetDeclaration 
+    | FunctionDeclaration
+    | Assignment
 
-Statement :=
-Expression
-Statment
+Expression := 
+    Literal
+    | Identifier
+    | UnaryExpression
+    | BinaryExpression 
+    | IfElseExpression 
+    | ReturnExpression
+    | FunctionEvaluation 
+    | '(' Expression ')'
 
-Expression :=
-BinaryExpression
-Literal
 
-Literal :=
-IntegerLiteral
-FloatLiteral
-StringLiteral
+UnaryExpression := 
+    < MINUS | BANG > Literal
+    | < MINUS | BANG > Identifier
 
 BinaryExpression :=
-Expression Operator Expression
+    Expression <BinaryOp> Expression
 
-Operator :=
-"+"
-"-"
-"\*"
-"/"
+BinaryOp := 
+    PLUS | MINUS | STAR | SLASH | AND | OR | LT | GT | LE | GE | EQ | NE
 
-IntegerLiteral := Integer
-FloatLiteral := Float
-StringLiteral := String
+

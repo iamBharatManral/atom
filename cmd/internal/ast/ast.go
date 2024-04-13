@@ -8,15 +8,21 @@ type Node struct {
 
 type (
 	Statement interface{}
-	AstNode   interface{}
 )
 
 type Literal struct {
 	Value any
 	Node
+	UnaryOp string
 }
 
 type Expression interface{}
+
+type UnaryExpression struct {
+	Value    Expression
+	Operator string
+	Node
+}
 
 type BinaryExpression struct {
 	Left     Expression
@@ -28,6 +34,7 @@ type BinaryExpression struct {
 type Identifier struct {
 	Value string
 	Node
+	UnaryOp string
 }
 
 type ErrorStatement struct {
@@ -70,8 +77,8 @@ type FunctionExpression struct {
 
 type FunctionEvaluation struct {
 	Node
-	Parameters []Statement
-	Name       Identifier
+	Arguments []Statement
+	Name      Identifier
 }
 
 type ReturnStatement struct {
