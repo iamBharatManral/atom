@@ -204,7 +204,7 @@ func (p *Parser) parseFunctionEvaluation() ast.Statement {
 
 func (p *Parser) isBinaryOperator(token token.Token) bool {
 	switch token.TokenType() {
-	case "PLUS", "MINUS", "STAR", "SLASH", "EQ", "NE", "GT", "LT", "GE", "LE":
+	case "PLUS", "MINUS", "STAR", "SLASH", "EQ", "NE", "GT", "LT", "GE", "LE", "MOD":
 		return true
 	default:
 		if token.Lexeme() == "and" || token.Lexeme() == "or" {

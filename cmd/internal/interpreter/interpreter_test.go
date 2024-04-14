@@ -25,6 +25,7 @@ func TestEvaluation(t *testing.T) {
 		{name: "multiple binary expression - example 2", want: 293, input: `(2 + 23) * 5 + (23 + 45) + 90 + (10)`},
 		{name: "variable declaration", want: nil, input: `let a = 10`},
 		{name: "comparison between integers", want: true, input: `13 > 9`},
+		{name: "mod operator", want: 2, input: `12 % 5`},
 		{name: "equality check", want: true, input: `"hello" == "hello"`},
 		{name: "comparison between floats", want: true, input: `1.2 <= 3.4`},
 		{name: "comparison between strings", want: false, input: `"greater" > "less"`},

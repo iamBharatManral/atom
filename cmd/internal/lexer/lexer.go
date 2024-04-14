@@ -48,6 +48,9 @@ func (l *Lexer) NextToken() token.Token {
 		return token.New(token.STAR, "*", "", l.currentPos, l.currentPos)
 	case '/':
 		return token.New(token.SLASH, "/", "", l.currentPos, l.currentPos)
+	case '%':
+		return token.New(token.MOD, "%", "", l.currentPos, l.currentPos)
+
 	case '=':
 		if l.peek() == '=' {
 			l.readChar()

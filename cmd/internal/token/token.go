@@ -9,6 +9,7 @@ const (
 	MINUS = "MINUS"
 	STAR  = "STAR"
 	SLASH = "SLASH"
+	MOD   = "MOD"
 
 	STRING  = "STRING"
 	INTEGER = "INTEGER"
@@ -38,19 +39,25 @@ var priorities = make(map[string][]any)
 
 func RegisterPriorities() {
 	priorities["NONE"] = []any{0, "left"}
-	priorities["+"] = []any{1, "left"}
-	priorities["-"] = []any{1, "left"}
-	priorities["*"] = []any{2, "left"}
-	priorities["/"] = []any{2, "left"}
-	priorities["and"] = []any{3, "left"}
-	priorities["or"] = []any{4, "left"}
-	priorities["!"] = []any{5, "left"}
-	priorities["<="] = []any{6, "left"}
-	priorities["!="] = []any{6, "left"}
-	priorities["<"] = []any{6, "left"}
-	priorities[">"] = []any{6, "left"}
-	priorities[">="] = []any{6, "left"}
-	priorities["=="] = []any{6, "left"}
+	priorities["or"] = []any{1, "left"}
+	priorities["and"] = []any{2, "left"}
+
+	priorities["=="] = []any{3, "left"}
+	priorities["!="] = []any{3, "left"}
+
+	priorities["<="] = []any{4, "left"}
+	priorities["<"] = []any{4, "left"}
+	priorities[">"] = []any{4, "left"}
+	priorities[">="] = []any{4, "left"}
+
+	priorities["+"] = []any{5, "left"}
+	priorities["-"] = []any{5, "left"}
+
+	priorities["*"] = []any{6, "left"}
+	priorities["/"] = []any{6, "left"}
+	priorities["%"] = []any{6, "left"}
+
+	priorities["!"] = []any{7, "left"}
 
 }
 

@@ -1,0 +1,27 @@
+1
+-12.3
+(124)
+1 + 2 + (1 * 9) + 0
+(!true)
+let a = 10
+a
+2 + 20
+fn incr |a| -> 
+let b = a + 20
+let c = b + a * 3
+c
+end
+incr(10)
+fn hello || -> 
+return 1
+end
+hello()
+let dd = fn |a| ->
+a 
+end
+dd(299)
+let oo = fn || ->
+"hello"
+end
+oo()
+true and false

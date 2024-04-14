@@ -311,6 +311,8 @@ func evalBinaryExpression(stmt ast.BinaryExpression, env *env.Environment) resul
 		return evalLogicalAnd(left, right)
 	case "or":
 		return evalLogicalOr(left, right)
+	case "%":
+		return evalMod(left, right)
 	default:
 		return error.UnsupportedOperatorError(stmt.Operator)
 	}
@@ -627,4 +629,22 @@ func evalDivision(left, right result.Result) result.Result {
 		return error.TypeMismatchError(left, right.Value)
 	}
 	return error.UnsupportedTypeError(left, "/")
+}
+
+func evalMod(left, right result.Result) result.Result {
+	if left.Type == "error" {
+		return left
+	}
+	if right.Type == "error" {
+		return right
+	}
+	switch left := left.Value.(type) {
+	case int:
+		if right, ok := right.Value.(int); ok {
+			return createResult("int", left%right)
+		}
+		return error.TypeMismatchError(left, right.Value)
+	default:
+		return error.UnsupportedTypeError(left, "%")
+	}
 }
