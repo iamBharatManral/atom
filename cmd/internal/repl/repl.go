@@ -6,9 +6,11 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 	"runtime"
 	"strings"
+	"syscall"
 
 	"github.com/iamBharatManral/atom.git/cmd/internal/env"
 	"github.com/iamBharatManral/atom.git/cmd/internal/interpreter"
@@ -23,6 +25,24 @@ const REST_OF_LINE_PROMPT = "... "
 func Start() {
 	util.Banner()
 	message()
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		for {
+			select {
+			case <-sigs:
+				fmt.Println()
+				fmt.Print(MAIN_PROMPT)
+				continue
+			default:
+				continue
+			}
+		}
+	}()
+	userInputLoop()
+}
+
+func userInputLoop() {
 	env := env.New()
 	for {
 		input := userInput()
