@@ -152,14 +152,14 @@ func (p *Parser) parseAssignment() ast.Statement {
 	return p.parseRHS("assign", left, start)
 }
 
-func (p *Parser) parseExpression() ast.Statement {
+func (p *Parser) parseExpression(args ...string) ast.Statement {
 	switch p.currentToken.Lexeme() {
 	case "if":
 		return p.parseIfExpression()
 	case "return":
 		return p.parseReturnExpression()
 	default:
-		postfix := p.convertToPostFixNotation()
+		postfix := p.convertToPostFixNotation(args...)
 		if len(postfix) == 1 {
 			return postfix[0]
 		}
@@ -185,8 +185,10 @@ func (p *Parser) parseFunctionEvaluation() ast.Statement {
 			p.nextToken()
 			continue
 		}
-		args = append(args, p.parseExpression())
-		p.nextToken()
+		args = append(args, p.parseExpression([]string{"call"}...))
+		if p.currentToken.TokenType() != token.RPAREN {
+			p.nextToken()
+		}
 	}
 
 	fnEval := ast.FunctionEvaluation{
@@ -397,11 +399,14 @@ func (p *Parser) createASTFromPostfixExpression(tokens []any) ast.Statement {
 	return nil
 }
 
-func (p *Parser) convertToPostFixNotation() []any {
+func (p *Parser) convertToPostFixNotation(calledBy ...string) []any {
 	queue := []any{}
 	stack := []any{}
 	var prevToken any
 	tokens := []string{"NEWLINE", "EOF", "COMMA"}
+	if len(calledBy) > 0 {
+		tokens = append(tokens, "RPAREN")
+	}
 	lexemes := []string{"else", "end", "do"}
 	for (!slices.Contains(tokens, p.currentToken.TokenType())) && (!slices.Contains(lexemes, p.currentToken.Lexeme())) {
 		current := p.currentToken
